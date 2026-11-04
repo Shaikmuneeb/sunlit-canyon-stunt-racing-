@@ -32,7 +32,7 @@ export class CarModel {
     scene.add(this.group);
 
     // Sunbreak Performance spec: low nose, broad shoulders, layered aero.
-    const bodyMat = mat('#14a89e', { roughness: 0.27, metalness: 0.72, clearcoat: 0.8 });
+    const bodyMat = mat('#14a89e', { roughness: 0.27, metalness: 0.72 });
     const bodyDark = mat('#08736f', { roughness: 0.34, metalness: 0.58 });
     const trimMat = mat('#10191d', { roughness: 0.3, metalness: 0.7 });
     const accentMat = mat('#ff7a2f', { emissive: '#ff421c', emissiveIntensity: 0.9, roughness: 0.28, metalness: 0.35 });
