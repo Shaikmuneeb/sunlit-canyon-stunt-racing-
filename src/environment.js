@@ -68,7 +68,7 @@ export class Environment {
     sky.frustumCulled = false;
     this.scene.add(sky);
     this.sky = sky;
-    this.scene.fog = new THREE.FogExp2(new THREE.Color('#c96849'), 0.00122);
+    this.scene.fog = new THREE.FogExp2(new THREE.Color('#c96849'), 0.00082);
   }
 
   buildLights() {

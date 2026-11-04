@@ -12,6 +12,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 
 const TOTAL_LAPS = 3;
 const CHECKPOINTS = 6;
@@ -178,12 +179,18 @@ export class Game {
   setupPost() {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    const HeatShader = {
+    // Subtle contact shading gives the low-poly geometry weight without the
+    // unstable full-screen distortion used by the old speed heat effect.
+    this.ssaoPass = new SSAOPass(this.scene, this.camera, 1, 1);
+    this.ssaoPass.kernelRadius = 5.5;
+    this.ssaoPass.minDistance = 0.0015;
+    this.ssaoPass.maxDistance = 0.12;
+    this.ssaoPass.output = SSAOPass.OUTPUT.Default;
+    this.composer.addPass(this.ssaoPass);
+
+    const GradeShader = {
       uniforms: {
         tDiffuse: { value: null },
-        uTime: { value: 0 },
-        uHeat: { value: 0.7 },
-        uSpeed: { value: 0 },
       },
       vertexShader: /* glsl */ `
         varying vec2 vUv;
@@ -194,33 +201,20 @@ export class Game {
       `,
       fragmentShader: /* glsl */ `
         uniform sampler2D tDiffuse;
-        uniform float uTime;
-        uniform float uHeat;
-        uniform float uSpeed;
         varying vec2 vUv;
         void main() {
-          vec2 uv = vUv;
-          float band = smoothstep(0.16, 0.46, uv.y) * (1.0 - smoothstep(0.70, 0.94, uv.y));
-          float wobble = sin(uv.y * 95.0 + uTime * 2.6 + sin(uv.x * 19.0 + uTime * 0.7) * 2.4);
-          vec2 off = vec2(
-            wobble * 0.0011,
-            sin(uv.x * 42.0 + uTime * 2.1) * 0.0006
-          ) * band * uHeat;
-          float edge = smoothstep(0.28, 0.92, length((uv - 0.5) * vec2(1.1, 1.0)));
-          float ca = (0.0006 + uSpeed * 0.0022) * edge;
-          vec3 col;
-          col.r = texture2D(tDiffuse, uv + off + vec2(ca, 0.0)).r;
-          col.g = texture2D(tDiffuse, uv + off).g;
-          col.b = texture2D(tDiffuse, uv + off - vec2(ca, 0.0)).b;
-          col += vec3(0.014, 0.007, 0.0) * band * uHeat;
-          float vig = smoothstep(0.98, 0.32, length((uv - 0.5) * vec2(1.12, 1.0)));
-          col *= mix(0.84, 1.0, vig);
+          vec3 col = texture2D(tDiffuse, vUv).rgb;
+          // Warm highlights, protected shadow detail, and restrained contrast.
+          col = mix(col, col * vec3(1.06, 0.93, 0.86), 0.22);
+          col = max(col - vec3(0.012, 0.006, 0.004), 0.0);
+          float vig = smoothstep(0.98, 0.35, length((vUv - 0.5) * vec2(1.08, 1.0)));
+          col *= mix(0.88, 1.0, vig);
           gl_FragColor = vec4(col, 1.0);
         }
       `,
     };
-    this.heatPass = new ShaderPass(HeatShader);
-    this.composer.addPass(this.heatPass);
+    this.gradePass = new ShaderPass(GradeShader);
+    this.composer.addPass(this.gradePass);
     this.composer.addPass(new OutputPass());
   }
 
@@ -512,11 +506,6 @@ export class Game {
 
     this.env.update(dt, this.camera.position, this.time);
     this.env.updateSun(this.car.pos);
-    if (this.heatPass) {
-      this.heatPass.uniforms.uTime.value = this.time;
-      this.heatPass.uniforms.uSpeed.value = clamp(this.car.speed / 78, 0, 1);
-      this.heatPass.uniforms.uHeat.value = this.state === 'paused' ? 0.3 : 0.85;
-    }
     this.effects.update(dt);
     this.effects.updateRings(dt);
     this.updateRecoverBanner(dt);

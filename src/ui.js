@@ -290,7 +290,7 @@ export class UI {
   }
 
   toast(label, opts = {}) {
-    const { value = '', cls = '', big = false } = opts;
+    const { value = '', cls = '', big = false, duration = 1.9 } = opts;
     if (!label && !value) return;
     const el = document.createElement('div');
     el.className = `toast ${cls} ${big ? 'big' : ''}`.trim();
@@ -299,7 +299,7 @@ export class UI {
     while (this.el.toasts.children.length > 3) {
       this.el.toasts.removeChild(this.el.toasts.firstElementChild);
     }
-    setTimeout(() => el.remove(), 2100);
+    setTimeout(() => el.remove(), Math.max(900, duration * 1000));
   }
 
   hint(html, duration = 4) {
