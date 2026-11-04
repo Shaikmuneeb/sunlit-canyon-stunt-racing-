@@ -156,14 +156,18 @@ export class CameraRig {
     const distance = (far ? 12.5 : 7.4) + speedN * (far ? 3.0 : 2.0);
     const height = (far ? 5.4 : 3.0) + speedN * 0.5;
 
+    // Follow the actual velocity heading, but keep the camera anchored to the
+    // corrected car yaw so it never swings to the wrong side during a drift.
     let travelYaw = car.yaw;
     if (car.speed > 9) {
-      travelYaw = Math.atan2(car.vel.x, car.vel.z);
-      if (Math.abs(angleDiff(travelYaw, car.yaw)) > Math.PI * 0.6) travelYaw = car.yaw;
+      const velocityYaw = Math.atan2(car.vel.x, car.vel.z);
+      if (Math.abs(angleDiff(velocityYaw, car.yaw)) <= Math.PI * 0.6) {
+        travelYaw = velocityYaw;
+      }
     }
-    const blend = far ? 0.55 : 0.35;
+    const blend = far ? 0.48 : 0.28;
     const targetYaw = wrapAngle(car.yaw + angleDiff(travelYaw, car.yaw) * blend);
-    const followRate = far ? 2.8 : car.grounded ? 5.0 : 3.0;
+    const followRate = far ? 3.4 : car.grounded ? 6.2 : 3.8;
     if (!this.snapped) {
       this.yaw = targetYaw;
     } else {

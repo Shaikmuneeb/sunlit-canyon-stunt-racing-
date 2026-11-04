@@ -36,6 +36,11 @@ const ACTION_KEYS = {
   right: ['ArrowRight', 'KeyD'],
 };
 
+// Input devices report right as positive, while the driving yaw convention
+// expects left as positive. Keep the correction at the input boundary so
+// keyboard, touch, mouse, and gamepad all behave identically.
+const STEERING_INPUT_SIGN = -1;
+
 export class Input {
   constructor(canvas) {
     this.canvas = canvas;
@@ -187,7 +192,7 @@ export class Input {
     const dead = 0.16;
     let steer = Math.abs(ax) < dead ? 0 : (Math.sign(ax) * (Math.abs(ax) - dead)) / (1 - dead);
     steer = Math.sign(steer) * Math.pow(Math.abs(steer), 1.35);
-    this.pad.steer = steer;
+    this.pad.steer = steer * STEERING_INPUT_SIGN;
     this.pad.throttle = pad.buttons[7]?.value || 0;
     this.pad.brake = pad.buttons[6]?.value || 0;
     const pressed = (i) => !!pad.buttons[i]?.pressed;
@@ -214,19 +219,19 @@ export class Input {
     const touch = this.touch;
     const keyLeft = this.key('ArrowLeft', 'KeyA');
     const keyRight = this.key('ArrowRight', 'KeyD');
-    let steerTarget = (keyRight ? 1 : 0) - (keyLeft ? 1 : 0);
+    let steerTarget = ((keyRight ? 1 : 0) - (keyLeft ? 1 : 0)) * STEERING_INPUT_SIGN;
     if (keyLeft || keyRight) this.lastDevice = 'keyboard';
 
     const mouseSteer =
       this.mouse.down && this.mouse.active && this.lastDevice === 'mouse'
-        ? clamp(this.mouse.x * 1.5, -1, 1)
+        ? clamp(this.mouse.x * 1.5, -1, 1) * STEERING_INPUT_SIGN
         : null;
     const padSteer = Math.abs(this.pad.steer) > 0.02 ? this.pad.steer : null;
 
     let target;
     let rate = 8;
     if (touch.left || touch.right) {
-      target = (touch.right ? 1 : 0) - (touch.left ? 1 : 0);
+      target = ((touch.right ? 1 : 0) - (touch.left ? 1 : 0)) * STEERING_INPUT_SIGN;
       rate = 9;
     } else if (mouseSteer !== null) {
       target = mouseSteer;
