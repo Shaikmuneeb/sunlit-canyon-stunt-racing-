@@ -1814,3 +1814,39 @@ kbd {
     transition-duration: 0.001ms !important;
   }
 }
+
+
+/* ================= Sunbreak Performance UI pass ================= */
+:root {
+  --line: rgba(140, 245, 217, 0.25);
+  --teal-bright: #8cf5d9;
+  --panel: linear-gradient(145deg, rgba(10, 28, 31, 0.92), rgba(13, 17, 22, 0.94));
+}
+#app { background: radial-gradient(circle at 50% 38%, #16434a 0%, #241a18 38%, #100b0c 100%); }
+.vignette { background: radial-gradient(ellipse at 50% 46%, transparent 46%, rgba(5, 11, 15, 0.55) 100%), linear-gradient(180deg, rgba(5, 25, 30, 0.24), transparent 24%, transparent 78%, rgba(7, 5, 8, 0.62)); }
+.hud-top { padding-top: clamp(16px, 2.5vw, 30px); }
+.hud-chip { background: linear-gradient(145deg, rgba(7, 33, 35, 0.88), rgba(12, 16, 21, 0.82)); border-color: rgba(140, 245, 217, 0.25); border-left-color: var(--teal-bright); box-shadow: 0 10px 30px rgba(0,0,0,.22); }
+.hud-chip .k, .hud-timer .k, .boost-head, .map-meta { color: #9dd9cf; }
+.hud-chip strong, .hud-timer strong, .speed-read span { text-shadow: 0 0 26px rgba(140, 245, 217, .24), 0 3px 0 rgba(4, 28, 31, .55); }
+.icon-btn { border-color: rgba(140,245,217,.28); background: rgba(6, 22, 27, .76); }
+.icon-btn span { background: var(--teal-bright); }
+.map-frame { background: radial-gradient(circle, rgba(10, 44, 45, .75), rgba(5, 15, 20, .9)); border-color: rgba(140,245,217,.34); box-shadow: inset 0 0 30px rgba(0,0,0,.6), 0 12px 34px rgba(0,0,0,.38), 0 0 24px rgba(30,190,172,.08); }
+.speed-read span { color: #f3fff3; }
+.boost-track { border-color: rgba(140,245,217,.35); background: rgba(5,19,23,.86); }
+#boost-fill { background: linear-gradient(90deg, #087b75, #35d8bb 55%, #efffd0); box-shadow: 0 0 16px rgba(53,216,187,.55); }
+#boost-fill.is-low { background: linear-gradient(90deg, #7c2f18, #ff8b38); }
+.style-read { border-color: rgba(140,245,217,.22); background: rgba(5,22,26,.7); }
+.title-screen::before { opacity: .34; }
+.title-content .logo-a, .title-content .logo-b { text-shadow: 0 0 30px rgba(53,216,187,.18); }
+.title-side .route-card, .title-side .keys-card, .panel { background: var(--panel); border-color: rgba(140,245,217,.22); box-shadow: 0 24px 80px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.04); }
+.btn { border-color: rgba(140,245,217,.26); background: rgba(8,31,34,.55); }
+.btn:hover { border-color: rgba(140,245,217,.8); box-shadow: 0 0 22px rgba(53,216,187,.16); }
+.btn-primary { background: linear-gradient(105deg, #0b6f6a, #1a9e8d); border-color: #8cf5d9; box-shadow: 0 0 24px rgba(30,190,172,.25); }
+.btn-primary:hover { background: linear-gradient(105deg, #118c83, #34c8ae); }
+.eyebrow .dot { background: var(--teal-bright); box-shadow: 0 0 12px var(--teal-bright); }
+@media (max-width: 760px) {
+  .hud-chip { min-width: 72px; padding-left: 10px; padding-right: 12px; }
+  .hud-chip strong { font-size: 17px; }
+  .map-panel { transform: scale(.82); transform-origin: bottom left; }
+  .speed-panel { transform: scale(.88); transform-origin: bottom right; }
+}
