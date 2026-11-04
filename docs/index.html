@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#20120d" />
+    <meta
+      name="description"
+      content="Sunbreak Canyon — an original 3D arcade stunt-racing game. Drift, boost, jump and wall-ride through a sunlit red-rock canyon."
+    />
+    <title>Sunbreak Canyon — Arcade Stunt Racing</title>
+    <script type="module" crossorigin src="/assets/index-C_jovKyq.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CxUk-yYA.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game" aria-label="Sunbreak Canyon race track"></canvas>
+      <div class="vignette"></div>
+      <div class="grain"></div>
+
+      <div id="ui">
+        <!-- ===================== HUD ===================== -->
+        <div id="hud" class="hud is-hidden">
+          <header class="hud-top">
+            <div class="hud-chip lap-chip">
+              <span class="k">LAP</span>
+              <strong id="lap-value">1<i>/3</i></strong>
+            </div>
+            <div class="hud-timer">
+              <span class="k">RACE TIME</span>
+              <strong id="time-value">0:00.00</strong>
+              <div id="delta" class="delta"></div>
+            </div>
+            <div class="hud-chip best-chip">
+              <span class="k">BEST LAP</span>
+              <strong id="best-value">--:--.--</strong>
+            </div>
+            <button id="btn-pause" class="icon-btn" aria-label="Pause game">
+              <span></span><span></span>
+            </button>
+          </header>
+
+          <div class="hud-center">
+            <div id="chain" class="chain">
+              <span class="chain-mult" id="chain-mult">x1</span>
+              <span class="chain-label">DRIFT CHAIN</span>
+              <span class="chain-time" id="chain-time">0.0</span>
+            </div>
+            <div class="toasts" id="toasts"></div>
+          </div>
+
+          <aside class="map-panel">
+            <div class="map-frame">
+              <canvas id="minimap" width="240" height="240"></canvas>
+            </div>
+            <div class="map-meta">
+              <span id="cp-count">CP 0/6</span>
+              <span class="map-name">SUNBREAK LOOP</span>
+            </div>
+          </aside>
+
+          <div class="speed-panel">
+            <div class="speed-read">
+              <span id="speed-value">0</span>
+              <small>KM/H</small>
+            </div>
+            <div class="boost">
+              <div class="boost-head"><span>BOOST</span><span id="boost-pct">45%</span></div>
+              <div class="boost-track"><div id="boost-fill"></div></div>
+            </div>
+            <div class="style-read">
+              <span>STYLE</span>
+              <strong id="style-value">0</strong>
+            </div>
+          </div>
+
+          <div id="hint" class="hint"></div>
+          <div id="countdown" class="countdown"></div>
+          <div id="recover" class="recover">RESETTING<span>keep your foot in it</span></div>
+
+          <div id="touch" class="touch">
+            <div class="touch-steer">
+              <button class="tbtn" data-touch="left" aria-label="Steer left">◀</button>
+              <button class="tbtn" data-touch="right" aria-label="Steer right">▶</button>
+            </div>
+            <div class="touch-actions">
+              <button class="tbtn tbtn-sm" data-touch="brake">BRK</button>
+              <button class="tbtn tbtn-drift" data-touch="drift">DRIFT</button>
+              <button class="tbtn tbtn-boost" data-touch="boost">BOOST</button>
+              <button class="tbtn tbtn-gas" data-touch="throttle">GAS</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== TITLE ===================== -->
+        <section class="screen title-screen" id="screen-title">
+          <div class="title-glow"></div>
+          <div class="title-content">
+            <div class="eyebrow"><span class="dot"></span>REDLINE PRO TOUR · ROUND 07</div>
+            <h1 class="logo">
+              <span class="logo-a">SUNBREAK</span>
+              <span class="logo-b">CANYON</span>
+            </h1>
+            <p class="tagline">
+              Sun-bleached rock. Redline speed.<br />
+              Chain the drift and chase the light.
+            </p>
+            <nav class="menu">
+              <button class="btn btn-primary" data-action="start">
+                <span class="btn-num">01</span>Start Race
+              </button>
+              <button class="btn" data-action="how">
+                <span class="btn-num">02</span>How to Play
+              </button>
+              <button class="btn" data-action="settings">
+                <span class="btn-num">03</span>Settings
+              </button>
+            </nav>
+            <div class="title-meta">
+              <span id="title-best">BEST LAP —</span>
+              <span>3 LAPS · SOLO TIME ATTACK</span>
+            </div>
+          </div>
+          <aside class="title-side">
+            <div class="route-card">
+              <span class="route-k">THE CIRCUIT</span>
+              <strong>2.6 KM OF RED ROCK</strong>
+              <p>
+                Sand bowls, natural arches, a tunnel, a canyon cut and one very
+                large gap. Find your line.
+              </p>
+              <div class="route-stats">
+                <div><b>7</b><span>GATES</span></div>
+                <div><b>4</b><span>RAMPS</span></div>
+                <div><b>1</b><span>BIG GAP</span></div>
+              </div>
+            </div>
+            <div class="keys-card">
+              <span class="route-k">QUICK KEYS</span>
+              <div><kbd>W</kbd><kbd>↑</kbd><em>throttle</em></div>
+              <div><kbd>SPACE</kbd><em>drift</em></div>
+              <div><kbd>SHIFT</kbd><em>boost</em></div>
+              <div><kbd>C</kbd><em>camera</em></div>
+            </div>
+          </aside>
+          <div class="title-foot">
+            <span>ORIGINAL GAME · ORIGINAL SOUNDTRACK</span>
+            <span>v1.0 · BUILD 01</span>
+          </div>
+        </section>
+
+        <!-- ===================== HOW TO PLAY ===================== -->
+        <section class="screen" id="screen-how">
+          <div class="panel panel-wide">
+            <header class="panel-head">
+              <span class="eyebrow"><span class="dot"></span>DRIVER'S BRIEFING</span>
+              <h2>How to <em>Play</em></h2>
+              <p class="panel-sub">Three laps. One canyon. Keep the wheels straight and the style high.</p>
+            </header>
+            <div class="how-grid">
+              <div class="how-block">
+                <h3>01 · The Line</h3>
+                <p>
+                  Follow the glowing gate posts and the painted chevrons. Brake
+                  before the tight stuff, then get back on the throttle early.
+                  The dry riverbed is wide — use all of it.
+                </p>
+                <h3>02 · The Moves</h3>
+                <ul class="moves">
+                  <li><b>Drift</b> — hold the drift key through a corner. The longer you hold a clean slide, the higher the chain multiplier and the faster your boost refills.</li>
+                  <li><b>Boost</b> — burns the meter for a serious shove. Earn it back with drifts, clean landings, wall-rides and near-misses.</li>
+                  <li><b>Air</b> — kickers and gap jumps give you airtime. Land straight and you keep every bit of speed.</li>
+                  <li><b>Wall-ride</b> — skim a canyon wall at speed to spark and top up boost. Straight-on hits cost time.</li>
+                </ul>
+              </div>
+              <div class="how-block">
+                <h3>03 · The Controls</h3>
+                <table class="controls-table">
+                  <tr><th>Steer</th><td><kbd>A</kbd><kbd>D</kbd><span>or</span><kbd>←</kbd><kbd>→</kbd><span>· mouse aim while held</span></td></tr>
+                  <tr><th>Throttle</th><td><kbd>W</kbd><kbd>↑</kbd><span>· hold left mouse</span></td></tr>
+                  <tr><th>Brake / Reverse</th><td><kbd>S</kbd><kbd>↓</kbd><span>· right mouse</span></td></tr>
+                  <tr><th>Drift</th><td><kbd>SPACE</kbd><span>· gamepad A</span></td></tr>
+                  <tr><th>Boost</th><td><kbd>SHIFT</kbd><span>· gamepad B / RB</span></td></tr>
+                  <tr><th>Camera</th><td><kbd>C</kbd><span>· gamepad X</span></td></tr>
+                  <tr><th>Restart run</th><td><kbd>R</kbd><span>· gamepad Y</span></td></tr>
+                  <tr><th>Pause</th><td><kbd>ESC</kbd><kbd>P</kbd><span>· gamepad Start</span></td></tr>
+                </table>
+                <div class="tip">
+                  <span class="tip-k">TIP</span>
+                  <p>Racing assist steers you gently out of slides and straightens the car on landing. Turn it off in Settings once you're comfortable.</p>
+                </div>
+              </div>
+            </div>
+            <footer class="panel-actions">
+              <button class="btn" data-action="back">Back</button>
+              <button class="btn btn-primary" data-action="start">Start Race</button>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===================== SETTINGS ===================== -->
+        <section class="screen" id="screen-settings">
+          <div class="panel">
+            <header class="panel-head">
+              <span class="eyebrow"><span class="dot"></span>PIT CREW</span>
+              <h2>Set<em>tings</em></h2>
+            </header>
+            <div class="settings-list">
+              <div class="setting">
+                <div class="setting-copy">
+                  <h3>Racing assist</h3>
+                  <p>Stability help for slides and landings.</p>
+                </div>
+                <button class="toggle" id="toggle-assist" role="switch" aria-checked="true"><span></span></button>
+              </div>
+              <div class="setting">
+                <div class="setting-copy">
+                  <h3>Camera</h3>
+                  <p>Chase is the classic view. Hood is the fast one.</p>
+                </div>
+                <div class="segmented" id="seg-camera">
+                  <button data-cam="0" class="is-on">Chase</button>
+                  <button data-cam="1">Far</button>
+                  <button data-cam="2">Hood</button>
+                </div>
+              </div>
+              <div class="setting slider-row">
+                <div class="setting-copy"><h3>Music</h3></div>
+                <input id="slider-music" type="range" min="0" max="100" value="65" />
+                <span class="slider-val" id="music-val">65</span>
+              </div>
+              <div class="setting slider-row">
+                <div class="setting-copy"><h3>Engine &amp; effects</h3></div>
+                <input id="slider-sfx" type="range" min="0" max="100" value="80" />
+                <span class="slider-val" id="sfx-val">80</span>
+              </div>
+              <div class="setting">
+                <div class="setting-copy">
+                  <h3>Touch controls</h3>
+                  <p>On-screen steering and pedals for phones.</p>
+                </div>
+                <button class="toggle" id="toggle-touch" role="switch" aria-checked="false"><span></span></button>
+              </div>
+            </div>
+            <footer class="panel-actions">
+              <button class="btn btn-quiet" data-action="reset-records">Reset records</button>
+              <button class="btn btn-primary" data-action="back">Done</button>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===================== PAUSE ===================== -->
+        <section class="screen" id="screen-pause">
+          <div class="panel panel-narrow">
+            <header class="panel-head">
+              <span class="eyebrow"><span class="dot"></span>HOLD THAT LINE</span>
+              <h2>Paused</h2>
+              <p class="panel-sub" id="pause-sub">Sunbreak Canyon · Lap 1 of 3</p>
+            </header>
+            <div class="pause-times">
+              <div><span>RACE TIME</span><strong id="pause-time">0:00.00</strong></div>
+              <div><span>BEST LAP</span><strong id="pause-best">--:--.--</strong></div>
+            </div>
+            <div class="menu">
+              <button class="btn btn-primary" data-action="resume">Resume</button>
+              <button class="btn" data-action="restart">Restart Run</button>
+              <button class="btn" data-action="settings">Settings</button>
+              <button class="btn btn-quiet" data-action="quit">Quit to Title</button>
+            </div>
+            <p class="pause-hint">ESC / P to resume · R to restart</p>
+          </div>
+        </section>
+
+        <!-- ===================== RESULTS ===================== -->
+        <section class="screen" id="screen-results">
+          <div class="panel panel-wide results-panel">
+            <header class="panel-head results-head">
+              <div>
+                <span class="eyebrow"><span class="dot"></span>RUN COMPLETE</span>
+                <h2 id="results-title">Sunbreak <em>Flyer</em></h2>
+              </div>
+              <div class="results-total">
+                <span>TOTAL TIME</span>
+                <strong id="results-total">0:00.00</strong>
+                <div id="results-record" class="record-badge">NEW BEST LAP</div>
+              </div>
+            </header>
+            <div class="results-body">
+              <div class="results-laps">
+                <div class="laps-head"><span>LAP</span><span>TIME</span><span>DELTA</span></div>
+                <div id="results-lap-rows"></div>
+                <div class="laps-best">
+                  <span>BEST LAP</span>
+                  <strong id="results-best">0:00.00</strong>
+                  <span id="results-best-delta" class="dim">—</span>
+                </div>
+              </div>
+              <div class="results-stats">
+                <div class="stat"><span>STYLE POINTS</span><b id="stat-style">0</b></div>
+                <div class="stat"><span>TOP SPEED</span><b id="stat-speed">0 <i>km/h</i></b></div>
+                <div class="stat"><span>BEST DRIFT CHAIN</span><b id="stat-chain">0.0 <i>s</i></b></div>
+                <div class="stat"><span>AIR TIME</span><b id="stat-air">0.0 <i>s</i></b></div>
+                <div class="stat"><span>NEAR MISSES</span><b id="stat-near">0</b></div>
+                <div class="stat"><span>CLEAN LANDINGS</span><b id="stat-land">0</b></div>
+              </div>
+            </div>
+            <footer class="panel-actions">
+              <button class="btn" data-action="quit">Title</button>
+              <button class="btn btn-primary" data-action="restart">Race Again</button>
+            </footer>
+          </div>
+        </section>
+
+        <div class="fade" id="fade"></div>
+        <div class="rotate-notice" id="rotate-notice">
+          <div class="rotate-phone"></div>
+          <strong>Turn the canyon sideways</strong>
+          <span>Sunbreak Canyon is built for landscape.</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
