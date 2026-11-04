@@ -1845,6 +1845,9 @@ kbd {
 .btn-primary:hover { background: linear-gradient(105deg, #118c83, #34c8ae); }
 .eyebrow .dot { background: var(--teal-bright); box-shadow: 0 0 12px var(--teal-bright); }
 
+.position-chip strong { color: #ffd477; }
+.position-chip strong i { color: rgba(255,255,255,.52); font-size: .58em; font-style: normal; margin-left: 2px; }
+
 /* Low-poly canyon grade: warm rock, teal instrumentation, crisp contrast. */
 #app { background: radial-gradient(circle at 52% 34%, #4b241d 0%, #241316 44%, #0e090b 100%); }
 .title-screen::after { background: linear-gradient(90deg, rgba(255,143,73,.08), transparent 42%, rgba(140,245,217,.05)); }

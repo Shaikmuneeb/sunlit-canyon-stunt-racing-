@@ -16,6 +16,7 @@ import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 
 const TOTAL_LAPS = 3;
 const CHECKPOINTS = 6;
+const TOTAL_RACERS = 8;
 const SETTINGS_KEY = 'sunbreak.settings.v1';
 const RECORDS_KEY = 'sunbreak.records.v1';
 const STEP = 1 / 120;
@@ -68,6 +69,7 @@ export class Game {
     this.env = new Environment(this.scene, this.track);
     this.effects = new Effects(this.scene);
     this.model = new CarModel(this.scene);
+    this.rivals = this.createRivals();
     this.audio = new AudioEngine();
     this.input = new Input(canvas);
     this.rig = new CameraRig(this.camera, this.track, this.env);
@@ -169,6 +171,78 @@ export class Game {
     this.enterTitle();
   }
 
+  createRivals() {
+    const palettes = [
+      { body: '#d9433f', bodyDark: '#8e242b', accent: '#ffb13b', emissive: '#ff4b1f', trim: '#ffe0a2' },
+      { body: '#4f6ee8', bodyDark: '#263c9a', accent: '#ff5d8f', emissive: '#ff244d', trim: '#b8c9ff' },
+      { body: '#e4a634', bodyDark: '#9f5d1e', accent: '#f6f0d0', emissive: '#ffc84a', trim: '#fff0a6' },
+      { body: '#d967b8', bodyDark: '#7a2f76', accent: '#65e4ff', emissive: '#28c9ff', trim: '#d6fbff' },
+      { body: '#f1eee4', bodyDark: '#6c6b70', accent: '#ff5a36', emissive: '#ff2a19', trim: '#ffffff' },
+      { body: '#805bd8', bodyDark: '#39266f', accent: '#9bff72', emissive: '#59dc49', trim: '#e7ddff' },
+      { body: '#45a7a2', bodyDark: '#1d5c66', accent: '#f5d15b', emissive: '#ffae28', trim: '#d9fff2' },
+    ];
+    return palettes.map((palette, index) => {
+      const model = new CarModel(this.scene, palette);
+      model.group.visible = false;
+      model.group.scale.setScalar(0.92);
+      return { model, index, distance: 0, speed: 43 + (index % 3) * 3.5 };
+    });
+  }
+
+  resetRivals(startS) {
+    const gridOffsets = [-58, 34, 86, -112, 142, -166, 205];
+    this.playerStartS = startS;
+    this.rivals.forEach((rival, index) => {
+      rival.distance = gridOffsets[index];
+      rival.model.group.visible = true;
+      this.poseRival(rival);
+    });
+  }
+
+  poseRival(rival) {
+    const s = ((this.playerStartS + rival.distance) % this.track.length + this.track.length) % this.track.length;
+    const { a } = this.track.getSample(s);
+    const pos = this.track.samplePos(s, rival.index % 2 ? 3.8 : -3.8);
+    pos.y += 0.04;
+    rival.model.group.position.copy(pos);
+    rival.model.group.rotation.y = Math.atan2(a.tan.x, a.tan.z);
+    rival.model.update(1 / 60, {
+      speed: rival.speed,
+      steer: 0,
+      lateral: 0,
+      grounded: true,
+      boostActive: false,
+      throttle: 1,
+      forwardSpeed: rival.speed,
+      accel: 0,
+      braking: false,
+      bank: a.bank,
+      slope: 0,
+      airHeight: 0,
+    });
+  }
+
+  updateRivals(dt) {
+    if (this.state !== 'racing') return;
+    this.rivals.forEach((rival, index) => {
+      rival.distance += rival.speed * dt;
+      // Small, deterministic pace variation keeps the field alive without
+      // giving any rival a handling or top-speed advantage over the player.
+      rival.speed = 44 + Math.sin(this.time * 0.55 + index * 1.7) * 4;
+      this.poseRival(rival);
+    });
+  }
+
+  playerRaceDistance() {
+    const delta = ((this.car.s - this.playerStartS) % this.track.length + this.track.length) % this.track.length;
+    return Math.max(0, (this.lap - 1) * this.track.length + delta);
+  }
+
+  racerPosition() {
+    const playerDistance = this.playerRaceDistance();
+    return 1 + this.rivals.filter((rival) => rival.distance > playerDistance).length;
+  }
+
   titlePose() {
     const s = ((this.track.findS(96, -29) - 22) % this.track.length + this.track.length) % this.track.length;
     const pos = this.track.samplePos(s, 0);
@@ -250,6 +324,8 @@ export class Game {
   // ------------------------------------------------------------------ state
   enterTitle() {
     this.state = 'title';
+    this.rivals.forEach((rival) => { rival.model.group.visible = false; });
+    this.audio.setPaused(false);
     this.ui.setHUD(false);
     this.ui.showScreen('title');
     this.ui.setTitleBest(this.records);
@@ -298,6 +374,7 @@ export class Game {
     this.syncTouchControls();
 
     const pose = this.track.startPose();
+    this.resetRivals(pose.s);
     this.car.reset(pose.s, 0);
     this.car.yaw = pose.yaw;
     this.car.model.group.position.copy(this.car.pos);
@@ -640,6 +717,7 @@ export class Game {
     if (iterations === 8) this.accum = 0;
 
     this.rig.update(dt, this.car, {});
+    this.updateRivals(dt);
     this.emitEffects(dt, drive);
 
     const speed = this.car.speed;
@@ -700,6 +778,8 @@ export class Game {
       },
       checkpoint: this.checkpoint,
       totalCheckpoints: CHECKPOINTS,
+      position: this.racerPosition(),
+      totalRacers: TOTAL_RACERS,
     };
   }
 

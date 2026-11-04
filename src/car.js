@@ -28,18 +28,18 @@ function box(w, h, d, material, x = 0, y = 0, z = 0) {
 }
 
 export class CarModel {
-  constructor(scene) {
+  constructor(scene, colors = {}) {
     this.group = new THREE.Group();
     this.tilt = new THREE.Group();
     this.group.add(this.tilt);
     scene.add(this.group);
 
     // Sunbreak Performance spec: low nose, broad shoulders, layered aero.
-    const bodyMat = mat('#14a89e', { roughness: 0.27, metalness: 0.72 });
-    const bodyDark = mat('#08736f', { roughness: 0.34, metalness: 0.58 });
+    const bodyMat = mat(colors.body || '#14a89e', { roughness: 0.27, metalness: 0.72 });
+    const bodyDark = mat(colors.bodyDark || '#08736f', { roughness: 0.34, metalness: 0.58 });
     const trimMat = mat('#10191d', { roughness: 0.3, metalness: 0.7 });
-    const accentMat = mat('#ff7a2f', { emissive: '#ff421c', emissiveIntensity: 0.9, roughness: 0.28, metalness: 0.35 });
-    const goldMat = mat('#ffd07c', { emissive: '#b8551f', emissiveIntensity: 0.22, roughness: 0.3, metalness: 0.65 });
+    const accentMat = mat(colors.accent || '#ff7a2f', { emissive: colors.emissive || '#ff421c', emissiveIntensity: 0.9, roughness: 0.28, metalness: 0.35 });
+    const goldMat = mat(colors.trim || '#ffd07c', { emissive: colors.trimEmissive || '#b8551f', emissiveIntensity: 0.22, roughness: 0.3, metalness: 0.65 });
     const glassMat = new THREE.MeshStandardMaterial({ color: '#091c25', roughness: 0.08, metalness: 0.86, transparent: true, opacity: 0.94 });
     const rubberMat = new THREE.MeshStandardMaterial({ color: '#080d10', roughness: 0.94, metalness: 0.03 });
     const rimMat = new THREE.MeshStandardMaterial({ color: '#b9e0d8', roughness: 0.19, metalness: 0.94, flatShading: true });

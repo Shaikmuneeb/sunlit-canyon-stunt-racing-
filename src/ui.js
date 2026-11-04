@@ -28,6 +28,7 @@ export class UI {
 
     this.el = {
       lap: $('#lap-value'),
+      position: $('#position-value'),
       time: $('#time-value'),
       best: $('#best-value'),
       delta: $('#delta'),
@@ -220,6 +221,11 @@ export class UI {
     if (this.last.time !== timeText) {
       el.time.textContent = timeText;
       this.last.time = timeText;
+    }
+    const positionText = `${state.position}<i>/${state.totalRacers}</i>`;
+    if (this.last.position !== positionText) {
+      el.position.innerHTML = positionText;
+      this.last.position = positionText;
     }
     const bestText = state.bestLap ? fmtTime(state.bestLap) : '—';
     if (this.last.best !== bestText) {
