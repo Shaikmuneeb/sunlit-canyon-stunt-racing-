@@ -275,7 +275,7 @@ export class Game {
     const ramp = this.track.ramps.find((item) => item.shortCut);
     if (!ramp || this.shortcutClaimedLap === this.lap) return;
     const ds = ((this.car.s - ramp.s + this.track.length * 1.5) % this.track.length) - this.track.length * 0.5;
-    if (Math.abs(ds) < ramp.length * 0.52 && Math.abs(this.car.lat - ramp.lat) < ramp.width * 0.46 && this.car.speed > 24) {
+    if (Math.abs(ds) < ramp.length * 0.52 && (this.car.route === 'branch' || Math.abs(this.car.lat - ramp.lat) < ramp.width * 0.46) && this.car.speed > 24) {
       this.shortcutClaimedLap = this.lap;
       this.car.addBoost(16);
       this.style += 240;

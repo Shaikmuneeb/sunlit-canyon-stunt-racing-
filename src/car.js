@@ -295,6 +295,7 @@ export class Car {
     this.vy = 0;
     this.s = 0;
     this.lat = 0;
+    this.route = 'main';
     this.grounded = true;
     this.airborne = false;
     this.airTime = 0;
@@ -352,6 +353,7 @@ export class Car {
     this.vy = 0;
     this.s = s;
     this.lat = lat;
+    this.route = 'main';
     this.grounded = true;
     this.airborne = false;
     this.airTime = 0;
@@ -407,7 +409,7 @@ export class Car {
 
   groundAt(s, lat) {
     const { a } = this.track.getSample(s);
-    const road = this.track.surfaceAt(s, lat);
+    const road = this.track.surfaceAt(s, lat, this.route);
     if (road !== null) {
       const onTarmac = Math.abs(lat) <= a.width / 2 + 0.4;
       return { y: road, kind: onTarmac ? 'road' : 'shoulder' };
@@ -431,6 +433,7 @@ export class Car {
     let near = this.track.nearest(this.pos.x, this.pos.z, this.s);
     this.s = near.s;
     this.lat = near.lat;
+    this.route = near.route || 'main';
     const smp = near.sample;
     this.bank = smp.bank;
     const right = smp.right;

@@ -93,6 +93,7 @@ export class Track {
     this._buildSpline();
     this._buildFeatures();
     this._buildRoad();
+    this._buildBranchRoute();
     this._buildRamps();
     this._buildWalls();
     this._buildGates();
@@ -162,6 +163,70 @@ export class Track {
     };
   }
 
+  _buildBranchRoute() {
+    const route = this.branchRoute;
+    const count = Math.max(48, Math.round(route.length / 3.4));
+    for (let i = 0; i <= count; i++) {
+      const t = i / count;
+      const s = route.start + route.length * t;
+      const main = this.getSample(s).a;
+      const lift = Math.sin(Math.PI * t) * 3.1;
+      const lat = Math.sin(Math.PI * t) * 8.2;
+      const pos = this.samplePos(s, lat);
+      pos.y += lift;
+      const prevS = route.start + route.length * Math.max(0, t - 1 / count);
+      const nextS = route.start + route.length * Math.min(1, t + 1 / count);
+      const prev = this.samplePos(prevS, Math.sin(Math.PI * Math.max(0, t - 1 / count)) * 8.2);
+      const next = this.samplePos(nextS, Math.sin(Math.PI * Math.min(1, t + 1 / count)) * 8.2);
+      prev.y += Math.sin(Math.PI * Math.max(0, t - 1 / count)) * 3.1;
+      next.y += Math.sin(Math.PI * Math.min(1, t + 1 / count)) * 3.1;
+      const tan = next.sub(prev).normalize();
+      const right = new THREE.Vector3(tan.z, 0, -tan.x).normalize();
+      route.samples.push({ routeS: s, pos, tan, right, width: route.width, bank: main.bank });
+    }
+
+    const positions = [];
+    const indices = [];
+    const colors = [];
+    const col = new THREE.Color();
+    for (let i = 0; i < route.samples.length; i++) {
+      const sample = route.samples[i];
+      for (const side of [-1, 1]) {
+        const p = sample.pos.clone().addScaledVector(sample.right, side * route.width * 0.5);
+        positions.push(p.x, p.y + 0.03, p.z);
+        col.set(side < 0 ? '#26363a' : '#314347');
+        colors.push(col.r, col.g, col.b);
+      }
+      if (i < route.samples.length - 1) {
+        const base = i * 2;
+        indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0.12, flatShading: true }));
+    mesh.name = 'canyon-cut-branch';
+    mesh.receiveShadow = true;
+    this.group.add(mesh);
+
+    const edge = [];
+    for (let i = 0; i < route.samples.length - 1; i++) {
+      for (const side of [-1, 1]) {
+        const a = route.samples[i];
+        const b = route.samples[i + 1];
+        const pa = a.pos.clone().addScaledVector(a.right, side * (route.width * 0.5 - 0.15));
+        const pb = b.pos.clone().addScaledVector(b.right, side * (route.width * 0.5 - 0.15));
+        edge.push(pa.x, pa.y + 0.08, pa.z, pb.x, pb.y + 0.08, pb.z);
+      }
+    }
+    const edgeGeo = new THREE.BufferGeometry();
+    edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
+    this.group.add(new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.9 })));
+  }
+
   findS(x, z) {
     let best = 0;
     let bd = Infinity;
@@ -210,7 +275,20 @@ export class Track {
   }
 
   // Road surface height at a point on the track. Returns null within gaps.
-  surfaceAt(s, lat) {
+  surfaceAt(s, lat, routeName = 'main') {
+    if (routeName === 'branch' && this.branchRoute?.samples.length) {
+      const route = this.branchRoute;
+      let d = s - route.start;
+      while (d < 0) d += this.length;
+      while (d > route.length) d -= this.length;
+      const f = clamp(d / route.length, 0, 1) * (route.samples.length - 1);
+      const i = Math.min(route.samples.length - 2, Math.floor(f));
+      const t = f - i;
+      const a = route.samples[i];
+      const b = route.samples[i + 1];
+      if (Math.abs(lat) > route.width / 2 + 1.5) return null;
+      return lerp(a.pos.y, b.pos.y, t) + Math.tan(lerp(a.bank, b.bank, t)) * lat;
+    }
     const { a, b, t } = this.getSample(s);
     if (a.gap || b.gap) return null;
     const width = lerp(a.width, b.width, t);
@@ -265,7 +343,35 @@ export class Track {
     const lat = dx * best.right.x + dz * best.right.z;
     let s = best.s + along;
     s = ((s % this.length) + this.length) % this.length;
-    return { s, lat, dist: Math.sqrt(bd), sample: best };
+    let result = { s, lat, dist: Math.sqrt(bd), sample: best, route: 'main' };
+
+    if (this.branchRoute?.samples.length) {
+      let branchBest = null;
+      let branchD2 = Infinity;
+      for (const candidate of this.branchRoute.samples) {
+        const bx = x - candidate.pos.x;
+        const bz = z - candidate.pos.z;
+        const d2 = bx * bx + bz * bz;
+        if (d2 < branchD2) {
+          branchD2 = d2;
+          branchBest = candidate;
+        }
+      }
+      if (branchBest && branchD2 < bd && branchD2 < (this.branchRoute.width * 0.62) ** 2) {
+        const bx = x - branchBest.pos.x;
+        const bz = z - branchBest.pos.z;
+        let branchAlong = clamp(bx * branchBest.tan.x + bz * branchBest.tan.z, -4, 4);
+        const branchLat = bx * branchBest.right.x + bz * branchBest.right.z;
+        result = {
+          s: clamp(branchBest.routeS + branchAlong, this.branchRoute.start, this.branchRoute.end),
+          lat: branchLat,
+          dist: Math.sqrt(branchD2),
+          sample: branchBest,
+          route: 'branch',
+        };
+      }
+    }
+    return result;
   }
 
   nearestGlobal(x, z) {
@@ -327,6 +433,20 @@ export class Track {
       height: 3.2,
       shortCut: true,
     });
+
+    // True alternate line: a raised inside cut that leaves the main ribbon
+    // before the hairpin and rejoins after it. It has its own collision surface
+    // and is not merely painted scenery.
+    let branchStart = this.findS(382, -350) - 16;
+    let branchEnd = this.findS(286, -326) + 22;
+    if (branchEnd <= branchStart) branchEnd += this.length;
+    this.branchRoute = {
+      start: branchStart,
+      end: branchEnd,
+      length: branchEnd - branchStart,
+      width: 9.5,
+      samples: [],
+    };
     this.ramps.push({
       s: this.findS(248, -112),
       lat: 0,
