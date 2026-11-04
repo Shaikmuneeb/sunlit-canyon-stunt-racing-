@@ -184,12 +184,14 @@ export class Game {
     ];
     return palettes.map((palette, index) => {
       const model = new CarModel(this.scene, palette);
+      const car = new Car(this.track, model, {});
       model.group.visible = false;
       model.group.scale.setScalar(0.92);
       // Rivals use the same base pace as the player’s non-boost car. Their
       // color and grid line add variety; no rival receives a hidden stat buff.
       return {
         model,
+        car,
         index,
         distance: 0,
         speed: 66,
@@ -205,31 +207,12 @@ export class Game {
     this.playerStartS = startS;
     this.rivals.forEach((rival, index) => {
       rival.distance = gridOffsets[index];
+      const s = ((startS + rival.distance) % this.track.length + this.track.length) % this.track.length;
+      rival.car.reset(s, rival.lat);
+      rival.car.assist = 0.35;
       rival.model.group.visible = true;
-      this.poseRival(rival);
-    });
-  }
-
-  poseRival(rival) {
-    const s = ((this.playerStartS + rival.distance) % this.track.length + this.track.length) % this.track.length;
-    const { a } = this.track.getSample(s);
-    const pos = this.track.samplePos(s, rival.lat);
-    pos.y += 0.04;
-    rival.model.group.position.copy(pos);
-    rival.model.group.rotation.y = Math.atan2(a.tan.x, a.tan.z);
-    rival.model.update(1 / 60, {
-      speed: rival.speed,
-      steer: clamp((rival.targetLat - rival.lat) * 0.16, -1, 1),
-      lateral: 0,
-      grounded: true,
-      boostActive: false,
-      throttle: 1,
-      forwardSpeed: rival.speed,
-      accel: 0,
-      braking: false,
-      bank: a.bank,
-      slope: 0,
-      airHeight: 0,
+      rival.car.model.group.position.copy(rival.car.pos);
+      rival.car.model.group.rotation.y = rival.car.yaw;
     });
   }
 
@@ -238,8 +221,12 @@ export class Game {
     const playerDistance = this.playerRaceDistance();
     const shortcut = this.track.ramps.find((ramp) => ramp.shortCut);
     this.rivals.forEach((rival, index) => {
-      rival.distance += rival.speed * dt;
-      const s = ((this.playerStartS + rival.distance) % this.track.length + this.track.length) % this.track.length;
+      const ai = rival.car;
+      if (ai.needsRecovery) {
+        const rescueS = ((ai.s - 20) % this.track.length + this.track.length) % this.track.length;
+        ai.reset(rescueS, index % 2 ? 3.8 : -3.8);
+      }
+      const s = ((ai.s % this.track.length) + this.track.length) % this.track.length;
       const ds = ((s - shortcut.s + this.track.length * 1.5) % this.track.length) - this.track.length * 0.5;
       const rivalLap = Math.floor(rival.distance / this.track.length);
       rival.targetLat = Math.sin(this.time * 0.35 + index * 1.9) * 3.2;
@@ -254,10 +241,25 @@ export class Game {
         rival.targetLat = clamp(rival.targetLat + (index % 2 ? -5 : 5), -8.5, 8.5);
       }
       rival.lat += (rival.targetLat - rival.lat) * clamp(dt * 4.5, 0, 1);
-      // Equal-car rule: every rival keeps the same base pace. Position changes
-      // come from route distance and the player’s boost/drift skill, not stats.
-      rival.speed = 66;
-      this.poseRival(rival);
+      const targetS = ai.s + 22;
+      const target = this.track.samplePos(targetS, rival.lat);
+      const dx = target.x - ai.pos.x;
+      const dz = target.z - ai.pos.z;
+      const desiredYaw = Math.atan2(dx, dz);
+      const yawError = Math.atan2(Math.sin(desiredYaw - ai.yaw), Math.cos(desiredYaw - ai.yaw));
+      const steer = clamp(yawError * 1.55, -1, 1);
+      const cornering = Math.abs(yawError);
+      const handbrake = cornering > 0.82 && ai.speed > 24;
+      const boost = cornering < 0.35 && ai.boostMeter > 28 && (Math.abs(rival.distance - playerDistance) > 18);
+      ai.update(dt, {
+        steer,
+        throttle: cornering > 1.25 ? 0.72 : 1,
+        brake: cornering > 1.35 ? 0.25 : 0,
+        handbrake,
+        boost,
+      }, 0.35);
+      rival.distance += Math.max(0, ai.forwardSpeed) * dt;
+      rival.speed = ai.speed;
     });
   }
 
