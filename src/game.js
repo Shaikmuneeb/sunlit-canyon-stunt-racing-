@@ -186,7 +186,9 @@ export class Game {
       const model = new CarModel(this.scene, palette);
       model.group.visible = false;
       model.group.scale.setScalar(0.92);
-      return { model, index, distance: 0, speed: 43 + (index % 3) * 3.5 };
+      // Rivals use the same base pace as the player’s non-boost car. Their
+      // color and grid line add variety; no rival receives a hidden stat buff.
+      return { model, index, distance: 0, speed: 66 };
     });
   }
 
@@ -227,9 +229,9 @@ export class Game {
     if (this.state !== 'racing') return;
     this.rivals.forEach((rival, index) => {
       rival.distance += rival.speed * dt;
-      // Small, deterministic pace variation keeps the field alive without
-      // giving any rival a handling or top-speed advantage over the player.
-      rival.speed = 44 + Math.sin(this.time * 0.55 + index * 1.7) * 4;
+      // Equal-car rule: every rival keeps the same base pace. Position changes
+      // come from route distance and the player’s boost/drift skill, not stats.
+      rival.speed = 66;
       this.poseRival(rival);
     });
   }
