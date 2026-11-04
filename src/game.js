@@ -188,7 +188,15 @@ export class Game {
       model.group.scale.setScalar(0.92);
       // Rivals use the same base pace as the player’s non-boost car. Their
       // color and grid line add variety; no rival receives a hidden stat buff.
-      return { model, index, distance: 0, speed: 66 };
+      return {
+        model,
+        index,
+        distance: 0,
+        speed: 66,
+        lat: index % 2 ? 3.8 : -3.8,
+        targetLat: index % 2 ? 3.8 : -3.8,
+        shortcutLap: -1,
+      };
     });
   }
 
@@ -205,13 +213,13 @@ export class Game {
   poseRival(rival) {
     const s = ((this.playerStartS + rival.distance) % this.track.length + this.track.length) % this.track.length;
     const { a } = this.track.getSample(s);
-    const pos = this.track.samplePos(s, rival.index % 2 ? 3.8 : -3.8);
+    const pos = this.track.samplePos(s, rival.lat);
     pos.y += 0.04;
     rival.model.group.position.copy(pos);
     rival.model.group.rotation.y = Math.atan2(a.tan.x, a.tan.z);
     rival.model.update(1 / 60, {
       speed: rival.speed,
-      steer: 0,
+      steer: clamp((rival.targetLat - rival.lat) * 0.16, -1, 1),
       lateral: 0,
       grounded: true,
       boostActive: false,
@@ -227,8 +235,25 @@ export class Game {
 
   updateRivals(dt) {
     if (this.state !== 'racing') return;
+    const playerDistance = this.playerRaceDistance();
+    const shortcut = this.track.ramps.find((ramp) => ramp.shortCut);
     this.rivals.forEach((rival, index) => {
       rival.distance += rival.speed * dt;
+      const s = ((this.playerStartS + rival.distance) % this.track.length + this.track.length) % this.track.length;
+      const ds = ((s - shortcut.s + this.track.length * 1.5) % this.track.length) - this.track.length * 0.5;
+      const rivalLap = Math.floor(rival.distance / this.track.length);
+      rival.targetLat = Math.sin(this.time * 0.35 + index * 1.9) * 3.2;
+      if (Math.abs(ds) < 34 && rival.shortcutLap !== rivalLap) {
+        rival.targetLat = shortcut.lat;
+        if (Math.abs(ds) < 5 && Math.abs(rival.lat - shortcut.lat) < 2.8) {
+          rival.distance += 16;
+          rival.shortcutLap = rivalLap;
+        }
+      }
+      if (Math.abs(rival.distance - playerDistance) < 24) {
+        rival.targetLat = clamp(rival.targetLat + (index % 2 ? -5 : 5), -8.5, 8.5);
+      }
+      rival.lat += (rival.targetLat - rival.lat) * clamp(dt * 4.5, 0, 1);
       // Equal-car rule: every rival keeps the same base pace. Position changes
       // come from route distance and the player’s boost/drift skill, not stats.
       rival.speed = 66;
@@ -244,6 +269,20 @@ export class Game {
   racerPosition() {
     const playerDistance = this.playerRaceDistance();
     return 1 + this.rivals.filter((rival) => rival.distance > playerDistance).length;
+  }
+
+  checkShortcutLine() {
+    const ramp = this.track.ramps.find((item) => item.shortCut);
+    if (!ramp || this.shortcutClaimedLap === this.lap) return;
+    const ds = ((this.car.s - ramp.s + this.track.length * 1.5) % this.track.length) - this.track.length * 0.5;
+    if (Math.abs(ds) < ramp.length * 0.52 && Math.abs(this.car.lat - ramp.lat) < ramp.width * 0.46 && this.car.speed > 24) {
+      this.shortcutClaimedLap = this.lap;
+      this.car.addBoost(16);
+      this.style += 240;
+      this.audio.boostWhoosh();
+      this.effects.addRing(this.car.pos, '#ffd166', 12);
+      this.ui.toast('CANYON CUT', { value: '+240', cls: 'good' });
+    }
   }
 
   titlePose() {
@@ -409,6 +448,7 @@ export class Game {
     this.recoverTimer = 0;
     this.finishedResults = null;
     this.hintStage = 0;
+    this.shortcutClaimedLap = -1;
     this.hintClock = 0;
     this.goTimer = 0;
     this.wasBoosting = false;
@@ -714,6 +754,7 @@ export class Game {
       }
       const before = this.car.s;
       this.car.update(STEP, drive, assist);
+      this.checkShortcutLine();
       this.checkGates(before, this.car.s);
       if (this.car.needsRecovery) this.handleRecovery();
       this.accum -= STEP;
@@ -862,6 +903,7 @@ export class Game {
     this.ui.toast(`LAP ${this.lap} COMPLETE`, { value: fmtTime(lapTime), cls: 'big' });
     this.audio.lap();
     this.lap += 1;
+    this.shortcutClaimedLap = -1;
     this.checkpoint = 0;
     this.lapTime = 0;
     this.splits = [];
