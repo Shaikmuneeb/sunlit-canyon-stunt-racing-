@@ -48,11 +48,11 @@ const CONTROL_POINTS = [
 const ROAD_STEP = 2.2;
 
 const PALETTE = {
-  road: new THREE.Color('#4b3a35'),
-  roadAlt: new THREE.Color('#5a453d'),
-  shoulder: new THREE.Color('#a9825c'),
-  line: new THREE.Color('#e8d9b5'),
-  dash: new THREE.Color('#f0d9a2'),
+  road: new THREE.Color('#20282b'),
+  roadAlt: new THREE.Color('#2d3739'),
+  shoulder: new THREE.Color('#9b6748'),
+  line: new THREE.Color('#f5eee0'),
+  dash: new THREE.Color('#fff4cf'),
   rockLow: new THREE.Color('#8e3f2c'),
   rockMid: new THREE.Color('#b55a38'),
   rockHigh: new THREE.Color('#d48252'),
@@ -507,11 +507,14 @@ export class Track {
       const a = this.samples[i];
       if (a.gap) continue;
       const s = a.s;
-      const p0 = this.samplePos(s - 2.2, -0.22);
-      const p1 = this.samplePos(s - 2.2, 0.22);
-      const p2 = this.samplePos(s + 2.2, 0.22);
-      const p3 = this.samplePos(s + 2.2, -0.22);
-      center.push([p0, p1, p2, p3]);
+      for (const lane of [-0.18, 0.18]) {
+        const lat = a.width * lane;
+        const p0 = this.samplePos(s - 2.2, lat - 0.11);
+        const p1 = this.samplePos(s - 2.2, lat + 0.11);
+        const p2 = this.samplePos(s + 2.2, lat + 0.11);
+        const p3 = this.samplePos(s + 2.2, lat - 0.11);
+        center.push([p0, p1, p2, p3]);
+      }
     }
     const cgeo = new THREE.BufferGeometry();
     const cpos = [];
@@ -607,9 +610,9 @@ export class Track {
     }
     geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     const mat = new THREE.LineBasicMaterial({
-      color: '#ffb257',
+      color: '#baf4e6',
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.82,
     });
     this.group.add(new THREE.LineSegments(geo, mat));
   }
@@ -1071,6 +1074,30 @@ export class Track {
       m.castShadow = true;
       this.group.add(m);
       this.decorColliders.push({ x: p.x, z: p.z, r: 1.35, y: p.y });
+    }
+
+    // Low modular safety barriers make the racing ribbon read at speed and
+    // give the circuit the bold arcade-road silhouette from the reference.
+    const barrierRed = new THREE.MeshStandardMaterial({ color: '#cf4938', roughness: 0.6, metalness: 0.15, flatShading: true });
+    const barrierCream = new THREE.MeshStandardMaterial({ color: '#f1dfb5', roughness: 0.72, metalness: 0.05, flatShading: true });
+    const barrierRanges = [
+      [this.findS(310, 80), 150, 1],
+      [this.findS(455, -165), 130, -1],
+      [this.findS(-250, 15), 110, 1],
+    ];
+    for (const [start, length, side] of barrierRanges) {
+      for (let d = 0; d < length; d += 7.2) {
+        const s = start + d;
+        const sample = this.getSample(s).a;
+        const lat = side * (sample.width / 2 + 1.25);
+        const p = this.samplePos(s, lat);
+        const barrier = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.72, 6.6), (Math.floor(d / 7.2) % 2) ? barrierCream : barrierRed);
+        barrier.position.set(p.x, p.y + 0.36, p.z);
+        barrier.rotation.y = Math.atan2(sample.tan.x, sample.tan.z);
+        barrier.castShadow = true;
+        barrier.receiveShadow = true;
+        this.group.add(barrier);
+      }
     }
   }
 

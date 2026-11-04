@@ -13,6 +13,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const TOTAL_LAPS = 3;
 const CHECKPOINTS = 6;
@@ -261,6 +262,8 @@ export class Game {
     this.ssaoPass.maxDistance = 0.12;
     this.ssaoPass.output = SSAOPass.OUTPUT.Default;
     this.composer.addPass(this.ssaoPass);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.34, 0.48, 0.78);
+    this.composer.addPass(this.bloomPass);
 
     const GradeShader = {
       uniforms: {

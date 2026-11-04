@@ -339,7 +339,7 @@ export class Effects {
   }
 
   boostTrail(pos, forward, side) {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 5; i++) {
       const ox = pos.x - forward.x * 2.4 + side * 0.42 + (Math.random() - 0.5) * 0.3;
       const oz = pos.z - forward.z * 2.4 + (Math.random() - 0.5) * 0.3;
       this.sparks.spawn({
@@ -349,16 +349,16 @@ export class Effects {
         vx: -forward.x * 6 + (Math.random() - 0.5) * 1.5,
         vy: 0.2 + Math.random() * 1,
         vz: -forward.z * 6 + (Math.random() - 0.5) * 1.5,
-        life: 0.25 + Math.random() * 0.25,
-        size0: 0.9,
+        life: 0.3 + Math.random() * 0.32,
+        size0: 1.25 + Math.random() * 0.45,
         size1: 0.1,
         r: 0.35, g: 0.95, b: 0.95,
-        alpha: 0.85,
+        alpha: 0.9,
         drag: 2,
         gravity: -1,
       });
     }
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 3; i++) {
       this.dust.spawn({
         x: pos.x - forward.x * 2.2,
         y: pos.y + 0.4,

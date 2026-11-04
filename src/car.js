@@ -19,6 +19,18 @@ function mat(color, opts = {}) {
   });
 }
 
+function paint(color, opts = {}) {
+  return new THREE.MeshPhysicalMaterial({
+    color,
+    roughness: 0.2,
+    metalness: 0.7,
+    clearcoat: 0.85,
+    clearcoatRoughness: 0.14,
+    flatShading: true,
+    ...opts,
+  });
+}
+
 function box(w, h, d, material, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   m.position.set(x, y, z);
@@ -35,10 +47,10 @@ export class CarModel {
     scene.add(this.group);
 
     // Sunbreak Performance spec: low nose, broad shoulders, layered aero.
-    const bodyMat = mat(colors.body || '#14a89e', { roughness: 0.27, metalness: 0.72 });
-    const bodyDark = mat(colors.bodyDark || '#08736f', { roughness: 0.34, metalness: 0.58 });
+    const bodyMat = paint(colors.body || '#14a89e');
+    const bodyDark = paint(colors.bodyDark || '#08736f', { roughness: 0.28, metalness: 0.62 });
     const trimMat = mat('#10191d', { roughness: 0.3, metalness: 0.7 });
-    const accentMat = mat(colors.accent || '#ff7a2f', { emissive: colors.emissive || '#ff421c', emissiveIntensity: 0.9, roughness: 0.28, metalness: 0.35 });
+    const accentMat = paint(colors.accent || '#ff7a2f', { emissive: colors.emissive || '#ff421c', emissiveIntensity: 0.9, roughness: 0.22, metalness: 0.45 });
     const goldMat = mat(colors.trim || '#ffd07c', { emissive: colors.trimEmissive || '#b8551f', emissiveIntensity: 0.22, roughness: 0.3, metalness: 0.65 });
     const glassMat = new THREE.MeshStandardMaterial({ color: '#091c25', roughness: 0.08, metalness: 0.86, transparent: true, opacity: 0.94 });
     const rubberMat = new THREE.MeshStandardMaterial({ color: '#080d10', roughness: 0.94, metalness: 0.03 });
