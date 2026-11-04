@@ -1844,6 +1844,12 @@ kbd {
 .btn-primary { background: linear-gradient(105deg, #0b6f6a, #1a9e8d); border-color: #8cf5d9; box-shadow: 0 0 24px rgba(30,190,172,.25); }
 .btn-primary:hover { background: linear-gradient(105deg, #118c83, #34c8ae); }
 .eyebrow .dot { background: var(--teal-bright); box-shadow: 0 0 12px var(--teal-bright); }
+
+/* Low-poly canyon grade: warm rock, teal instrumentation, crisp contrast. */
+#app { background: radial-gradient(circle at 52% 34%, #4b241d 0%, #241316 44%, #0e090b 100%); }
+.title-screen::after { background: linear-gradient(90deg, rgba(255,143,73,.08), transparent 42%, rgba(140,245,217,.05)); }
+.panel, .title-side .route-card, .title-side .keys-card { backdrop-filter: blur(10px) saturate(1.08); }
+.btn-primary { box-shadow: 0 0 24px rgba(255,122,47,.24), inset 0 1px 0 rgba(255,255,255,.12); }
 @media (max-width: 760px) {
   .hud-chip { min-width: 72px; padding-left: 10px; padding-right: 12px; }
   .hud-chip strong { font-size: 17px; }

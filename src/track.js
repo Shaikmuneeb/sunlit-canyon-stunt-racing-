@@ -438,6 +438,7 @@ export class Track {
       roughness: 0.96,
       metalness: 0.0,
       side: THREE.DoubleSide,
+      flatShading: true,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
@@ -494,6 +495,7 @@ export class Track {
       emissive: '#c79a55',
       emissiveIntensity: 0.24,
       roughness: 0.7,
+      flatShading: true,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.receiveShadow = true;
@@ -526,6 +528,7 @@ export class Track {
     const cmat = new THREE.MeshStandardMaterial({
       color: '#e8cf99',
       roughness: 0.8,
+      flatShading: true,
     });
     this.group.add(new THREE.Mesh(cgeo, cmat));
 

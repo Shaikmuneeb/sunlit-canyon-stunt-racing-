@@ -5,6 +5,9 @@ const CAR_HALF_WIDTH = 0.95;
 const GRAVITY = 24;
 const BASE_TOP_SPEED = 66;
 const BOOST_TOP_SPEED = 84;
+// Physics and camera use +Z as forward. The authored mesh details are toward
+// -Z, so correct the art locally instead of changing the movement convention.
+const MODEL_LOCAL_HEADING_FIX = Math.PI;
 
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
@@ -44,6 +47,7 @@ export class CarModel {
     const body = new THREE.Group();
     this.tilt.add(body);
     this.body = body;
+    this.tilt.rotation.y = MODEL_LOCAL_HEADING_FIX;
 
     // Main sculpted wedge and raised rear shoulders.
     body.add(box(2.12, 0.48, 3.55, bodyMat, 0, 0.64, 0.05));

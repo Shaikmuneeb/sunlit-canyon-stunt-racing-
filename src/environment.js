@@ -25,10 +25,10 @@ export class Environment {
       fog: false,
       uniforms: {
         sunDir: { value: sunDir },
-        topColor: { value: new THREE.Color('#2f6da8') },
-        midColor: { value: new THREE.Color('#86a7bd') },
-        horizonColor: { value: new THREE.Color('#f6b482') },
-        hazeColor: { value: new THREE.Color('#e9b489') },
+        topColor: { value: new THREE.Color('#27384c') },
+        midColor: { value: new THREE.Color('#8d5c57') },
+        horizonColor: { value: new THREE.Color('#f3a15d') },
+        hazeColor: { value: new THREE.Color('#d8754a') },
       },
       vertexShader: /* glsl */ `
         varying vec3 vDir;
@@ -52,8 +52,8 @@ export class Environment {
           col = mix(col, hazeColor, smoothstep(0.16, -0.02, h) * 0.55);
           // sun glow
           float sd = max(dot(normalize(vDir), sunDir), 0.0);
-          col += vec3(1.0, 0.58, 0.28) * pow(sd, 14.0) * 0.7;
-          col += vec3(1.0, 0.82, 0.55) * pow(sd, 240.0) * 1.9;
+          col += vec3(1.0, 0.38, 0.14) * pow(sd, 14.0) * 0.86;
+          col += vec3(1.0, 0.72, 0.38) * pow(sd, 240.0) * 2.1;
           // sun disc
           col += vec3(1.0, 0.95, 0.8) * smoothstep(0.9992, 0.99975, sd) * 2.2;
           // faint warm clouds
@@ -68,13 +68,13 @@ export class Environment {
     sky.frustumCulled = false;
     this.scene.add(sky);
     this.sky = sky;
-    this.scene.fog = new THREE.FogExp2(new THREE.Color('#e7a97e'), 0.00105);
+    this.scene.fog = new THREE.FogExp2(new THREE.Color('#c96849'), 0.00122);
   }
 
   buildLights() {
-    const hemi = new THREE.HemisphereLight('#ffd9b4', '#5c2e22', 1.0);
+    const hemi = new THREE.HemisphereLight('#ffd0a0', '#3b1b1a', 1.08);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight('#ffd4a3', 3.15);
+    const sun = new THREE.DirectionalLight('#ffbd78', 3.5);
     sun.position.copy(this.sunDir).multiplyScalar(260);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -90,11 +90,11 @@ export class Environment {
     this.scene.add(sun);
     this.scene.add(sun.target);
     this.sun = sun;
-    this.ambient = new THREE.AmbientLight('#ffb98d', 0.16);
+    this.ambient = new THREE.AmbientLight('#d65e45', 0.2);
     this.scene.add(this.ambient);
 
     // Soft bounce light from the canyon floor, warm and low.
-    const bounce = new THREE.DirectionalLight('#ff8e5e', 0.35);
+    const bounce = new THREE.DirectionalLight('#b83f32', 0.48);
     bounce.position.set(0.4, -0.5, 0.6);
     this.scene.add(bounce);
   }

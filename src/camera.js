@@ -3,6 +3,12 @@ import { clamp, damp, angleDiff, wrapAngle } from './util.js';
 
 const MODES = ['chase', 'far', 'hood'];
 
+// Shared world convention with Car.update(): +Z at yaw 0 is travel forward.
+// The car mesh applies its own local 180-degree art correction.
+function forwardFromYaw(yaw) {
+  return new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+}
+
 export class CameraRig {
   constructor(camera, track, env) {
     this.camera = camera;
@@ -46,7 +52,7 @@ export class CameraRig {
   }
 
   snapTo(car, distance = 8) {
-    const forward = new THREE.Vector3(Math.sin(car.yaw), 0, Math.cos(car.yaw));
+    const forward = forwardFromYaw(car.yaw);
     this.yaw = car.yaw;
     this.pos.copy(car.pos).addScaledVector(forward, -distance);
     this.pos.y = car.pos.y + 3.1;
@@ -67,7 +73,7 @@ export class CameraRig {
       this.introAngle += dt * 0.06;
       const center = car.pos;
       const radius = 10.3;
-      const forward = new THREE.Vector3(Math.sin(car.yaw), 0, Math.cos(car.yaw));
+      const forward = forwardFromYaw(car.yaw);
       const right = new THREE.Vector3(forward.z, 0, -forward.x);
       const orbit = Math.sin(this.introAngle) * 0.42;
       const desired = new THREE.Vector3()
@@ -125,7 +131,7 @@ export class CameraRig {
     }
 
     if (this.mode === 'hood') {
-      const forward = new THREE.Vector3(Math.sin(car.yaw), 0, Math.cos(car.yaw));
+      const forward = forwardFromYaw(car.yaw);
       const up = new THREE.Vector3(0, 1, 0);
       const target = new THREE.Vector3()
         .copy(car.pos)
@@ -164,7 +170,7 @@ export class CameraRig {
       this.yaw = wrapAngle(this.yaw + angleDiff(targetYaw, this.yaw) * (1 - Math.exp(-followRate * dt)));
     }
 
-    const forward = new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+    const forward = forwardFromYaw(this.yaw);
     const right = new THREE.Vector3(forward.z, 0, -forward.x);
     const desired = new THREE.Vector3()
       .copy(car.pos)
