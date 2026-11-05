@@ -254,7 +254,7 @@ export class Effects {
   }
 
   driftSmoke(pos, side, vel, strength = 1) {
-    const n = 1 + Math.floor(strength * 1.1);
+    const n = 2 + Math.floor(strength * 1.8);
     for (let i = 0; i < n; i++) {
       this.dust.spawn({
         x: pos.x + (Math.random() - 0.5) * 0.7,
@@ -267,7 +267,7 @@ export class Effects {
         size0: 0.45,
         size1: 1.9 + Math.random() * 1.1,
         r: 0.8, g: 0.68, b: 0.52,
-        alpha: 0.13 + Math.random() * 0.09,
+        alpha: 0.16 + Math.random() * 0.11,
         drag: 1.9,
         gravity: -0.5,
       });
@@ -275,7 +275,7 @@ export class Effects {
   }
 
   tireDust(pos, vel, side = 1) {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       this.dust.spawn({
         x: pos.x + (Math.random() - 0.5) * 1.4,
         y: pos.y + 0.25,
@@ -287,7 +287,7 @@ export class Effects {
         size0: 0.5,
         size1: 2.4,
         r: 0.76, g: 0.61, b: 0.45,
-        alpha: 0.16,
+        alpha: 0.19,
         drag: 1.7,
         gravity: -0.4,
       });
@@ -339,7 +339,7 @@ export class Effects {
   }
 
   boostTrail(pos, forward, side) {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 8; i++) {
       const ox = pos.x - forward.x * 2.4 + side * 0.42 + (Math.random() - 0.5) * 0.3;
       const oz = pos.z - forward.z * 2.4 + (Math.random() - 0.5) * 0.3;
       this.sparks.spawn({
@@ -349,11 +349,11 @@ export class Effects {
         vx: -forward.x * 6 + (Math.random() - 0.5) * 1.5,
         vy: 0.2 + Math.random() * 1,
         vz: -forward.z * 6 + (Math.random() - 0.5) * 1.5,
-        life: 0.3 + Math.random() * 0.32,
+        life: 0.34 + Math.random() * 0.36,
         size0: 1.25 + Math.random() * 0.45,
         size1: 0.1,
         r: 0.35, g: 0.95, b: 0.95,
-        alpha: 0.9,
+        alpha: 0.95,
         drag: 2,
         gravity: -1,
       });

@@ -212,7 +212,7 @@ export class CameraRig {
 
     const lookAhead = new THREE.Vector3()
       .copy(car.pos)
-      .addScaledVector(forward, 8 + speedN * 8)
+      .addScaledVector(forward, 8 + speedN * 9 + (car.boosting ? 2.5 : 0))
       .addScaledVector(new THREE.Vector3(0, 1, 0), 1.2);
     this.look.lerp(lookAhead, 1 - Math.exp(-3.5 * dt));
 
@@ -223,12 +223,12 @@ export class CameraRig {
     cam.lookAt(this.look);
 
     const targetRoll =
-      -car.bank * 0.24 - clamp(car.lateralSpeed * 0.002, -0.035, 0.035);
+      -car.bank * 0.27 - clamp(car.lateralSpeed * 0.0022, -0.04, 0.04);
     this.roll = damp(this.roll, car.grounded ? targetRoll : targetRoll * 0.4, 5, dt);
     cam.rotateZ(this.roll);
 
     const baseFov = far ? 60 : 62;
-    this.setFov(baseFov + speedN * 6 + (car.boosting ? 2.5 : 0), dt, paused);
+    this.setFov(baseFov + speedN * 7 + (car.boosting ? 3.5 : 0), dt, paused);
   }
 
   applyShake(dt, scale) {
