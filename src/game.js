@@ -282,6 +282,7 @@ export class Game {
       this.car.addBoost(16);
       this.style += 240;
       this.audio.boostWhoosh();
+      this.audio.branchCue();
       this.effects.addRing(this.car.pos, '#ffd166', 12);
       this.ui.toast('CANYON CUT', { value: '+240', cls: 'good' });
     }
@@ -373,6 +374,7 @@ export class Game {
     this.rivals.forEach((rival) => { rival.model.group.visible = false; });
     this.audio.setPaused(false);
     this.ui.setHUD(false);
+    this.audio.setPhase('menu');
     this.ui.showScreen('title');
     this.ui.setTitleBest(this.records);
     this.ui.updateTouchVisibility(false);
@@ -406,6 +408,7 @@ export class Game {
     this.audio.resume();
     this.audio.setPaused(false);
     this.audio.setIntensity(1);
+    this.audio.setPhase('race');
     this.audio.setVolumes(this.settings.music, this.settings.sfx);
 
     this.ui.fade(true);
@@ -913,6 +916,7 @@ export class Game {
     if (previousBest) this.ui.showDelta(lapTime - previousBest);
     if (this.lap === TOTAL_LAPS) {
       this.audio.setIntensity(2);
+      this.audio.setPhase('final');
       this.ui.toast('FINAL LAP · SEND IT', { cls: 'big' });
     }
     this.saveRecords();
@@ -962,6 +966,7 @@ export class Game {
     };
 
     this.finishTimer = 2.1;
+    this.audio.setPhase('results');
     this.ui.countdown('FINISH', true);
     this.audio.finish();
     this.effects.addRing(this.car.pos, '#8cf5d9', 20);

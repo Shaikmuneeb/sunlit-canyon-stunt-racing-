@@ -23,6 +23,7 @@ export class AudioEngine {
     this.musicVolume = 0.65;
     this.sfxVolume = 0.8;
     this.intensity = 0;
+    this.phase = 'menu';
     this.paused = false;
     this.step = 0;
     this.nextNoteTime = 0;
@@ -373,6 +374,16 @@ export class AudioEngine {
     this.noiseBurst({ dur: 0.16, gain: 0.05, freq: 2600, q: 2 });
   }
 
+  branchCue() {
+    this.tone({ freq: 392, type: 'triangle', dur: 0.12, gain: 0.08 });
+    this.tone({ freq: 587, type: 'triangle', dur: 0.18, gain: 0.1, when: 0.08 });
+    this.tone({ freq: 880, type: 'sine', dur: 0.28, gain: 0.08, when: 0.16 });
+  }
+
+  rivalPass() {
+    this.tone({ freq: 320, slide: 760, type: 'sawtooth', dur: 0.22, gain: 0.07, filter: 1800 });
+  }
+
   countdown(isGo = false) {
     if (isGo) {
       this.tone({ freq: 880, type: 'square', dur: 0.5, gain: 0.15, filter: 3000 });
@@ -436,6 +447,17 @@ export class AudioEngine {
     }
   }
 
+  setPhase(phase) {
+    this.phase = phase;
+    if (!this.ready) return;
+    const target = phase === 'results' ? 0.58 : phase === 'menu' ? 0.62 : 0.52;
+    this.musicBus.gain.setTargetAtTime(
+      this.paused ? this.musicVolume * 0.12 : this.musicVolume * target,
+      this.ctx.currentTime,
+      0.8
+    );
+  }
+
   // ---- music sequencer ----------------------------------------------------
   startMusic() {
     if (!this.ready || this.musicStarted) return;
@@ -461,7 +483,8 @@ export class AudioEngine {
     const bar = Math.floor(step / 16);
     const s = step % 16;
     const intensity = this.intensity;
-    const high = intensity >= 2;
+    const high = intensity >= 2 || this.phase === 'results';
+    const finalLap = this.phase === 'final';
 
     // Kick
     if (s === 0 || s === 6 || s === 8 || (s === 14 && intensity > 0) || (s === 11 && high)) {
@@ -477,6 +500,10 @@ export class AudioEngine {
     }
     // Shaker sixteenths on final lap
     if (high && s % 2 === 1) this.musicHat(time, 0.018);
+    if ((finalLap || this.phase === 'results') && s % 4 === 1) {
+      const arp = [76, 80, 83, 88][(bar + s) % 4];
+      this.musicLead(time, arp, stepDur * 1.4, 2);
+    }
 
     // Bass
     const bassNote = BASS_PATTERN[s];
