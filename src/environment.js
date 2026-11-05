@@ -11,6 +11,7 @@ export class Environment {
     this.buildLights();
     this.buildTerrain();
     this.buildMesas();
+    this.buildHorizonRidges();
     this.buildFlora();
     this.buildDustDevils();
   }
@@ -68,6 +69,17 @@ export class Environment {
     sky.frustumCulled = false;
     this.scene.add(sky);
     this.sky = sky;
+    const sunTexture = makeSunTexture();
+    this.sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: sunTexture,
+      color: '#fff0c2',
+      transparent: true,
+      opacity: 0.86,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }));
+    this.sunSprite.scale.set(92, 92, 1);
+    this.scene.add(this.sunSprite);
     this.scene.fog = new THREE.FogExp2(new THREE.Color('#c96849'), 0.00082);
   }
 
@@ -291,6 +303,42 @@ export class Environment {
     }
   }
 
+  buildHorizonRidges() {
+    const rng = mulberry32(1818);
+    this.horizon = new THREE.Group();
+    this.scene.add(this.horizon);
+    const farRock = new THREE.MeshStandardMaterial({ color: '#6b3030', roughness: 1, flatShading: true });
+    const farLit = new THREE.MeshStandardMaterial({ color: '#a6503b', roughness: 1, flatShading: true });
+    for (let i = 0; i < 22; i++) {
+      const angle = (i / 22) * TAU + (rng() - 0.5) * 0.12;
+      const radius = 720 + rng() * 260;
+      const width = 42 + rng() * 90;
+      const height = 55 + rng() * 105;
+      const base = new THREE.Group();
+      const silhouette = new THREE.Mesh(
+        new THREE.CylinderGeometry(width * 0.72, width, height, 5 + Math.floor(rng() * 3), 1),
+        i % 3 === 0 ? farLit : farRock
+      );
+      silhouette.position.y = height * 0.5 - 14;
+      silhouette.rotation.y = rng() * TAU;
+      silhouette.castShadow = true;
+      base.add(silhouette);
+      if (i % 2 === 0) {
+        const cap = new THREE.Mesh(
+          new THREE.CylinderGeometry(width * 0.45, width * 0.7, 16 + rng() * 20, 6, 1),
+          farLit
+        );
+        cap.position.y = height - 4;
+        cap.rotation.y = rng() * TAU;
+        base.add(cap);
+      }
+      base.position.set(Math.cos(angle) * radius, -18, Math.sin(angle) * radius);
+      base.rotation.y = -angle * 0.35;
+      this.horizon.add(base);
+    }
+    this.horizon.renderOrder = -2;
+  }
+
   buildFlora() {
     const rng = mulberry32(9911);
     this.flora = new THREE.Group();
@@ -441,6 +489,10 @@ export class Environment {
       d.sprite.position.y += Math.sin(elapsed * 0.4 + d.phase) * dt * 0.25;
     }
     if (this.sky) this.sky.position.x = cameraPos.x;
+    if (this.sunSprite) {
+      this.sunSprite.position.copy(cameraPos).addScaledVector(this.sunDir, 920);
+      this.sunSprite.position.y += 18;
+    }
   }
 }
 
@@ -461,4 +513,21 @@ function makeSoftSprite() {
   ctx.fillRect(0, 0, 128, 128);
   const t = new THREE.CanvasTexture(canvas);
   return t;
+}
+
+function makeSunTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createRadialGradient(128, 128, 8, 128, 128, 128);
+  g.addColorStop(0, 'rgba(255,255,245,1)');
+  g.addColorStop(0.16, 'rgba(255,232,170,.95)');
+  g.addColorStop(0.42, 'rgba(255,166,86,.42)');
+  g.addColorStop(1, 'rgba(255,126,53,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
