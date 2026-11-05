@@ -408,6 +408,40 @@ body {
   opacity: 0.55;
 }
 
+.race-feedback {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.race-feedback > div {
+  min-width: 0;
+  padding: 5px 7px 6px;
+  background: rgba(25, 12, 8, 0.78);
+  border: 1px solid rgba(255, 203, 110, 0.2);
+  border-left: 2px solid var(--teal);
+}
+
+.race-feedback span {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  color: var(--gold-soft);
+  opacity: 0.75;
+}
+
+.race-feedback strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+
+.race-feedback strong.is-ahead { color: #ffc36d; }
+.race-feedback strong.is-behind { color: #9fe7d5; }
+
 /* Speed */
 .speed-panel {
   position: absolute;

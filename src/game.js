@@ -814,6 +814,12 @@ export class Game {
   }
 
   hudState() {
+    const playerDistance = this.playerRaceDistance();
+    const nearby = this.rivals
+      .map((rival) => rival.distance - playerDistance)
+      .filter((gap) => Math.abs(gap) > 0.5)
+      .sort((a, b) => Math.abs(a) - Math.abs(b))[0];
+    const splitTarget = this.records.bestSplits?.[Math.max(0, this.checkpoint - 1)];
     return {
       lap: Math.min(this.lap, TOTAL_LAPS),
       totalLaps: TOTAL_LAPS,
@@ -831,6 +837,9 @@ export class Game {
       totalCheckpoints: CHECKPOINTS,
       position: this.racerPosition(),
       totalRacers: TOTAL_RACERS,
+      sector: Math.min(this.checkpoint + 1, CHECKPOINTS),
+      sectorDelta: isFinite(splitTarget) ? this.lapTime - splitTarget : null,
+      rivalGap: nearby ?? null,
     };
   }
 

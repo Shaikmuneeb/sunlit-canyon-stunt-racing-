@@ -44,6 +44,9 @@ export class UI {
       countdown: $('#countdown'),
       recover: $('#recover'),
       cp: $('#cp-count'),
+      sector: $('#sector-value'),
+      split: $('#split-value'),
+      rivalGap: $('#rival-gap'),
       titleBest: $('#title-best'),
       pauseSub: $('#pause-sub'),
       pauseTime: $('#pause-time'),
@@ -254,6 +257,26 @@ export class UI {
     if (this.last.cp !== cpText) {
       el.cp.textContent = cpText;
       this.last.cp = cpText;
+    }
+    const sectorText = `${String(state.sector).padStart(2, '0')}/${String(state.totalCheckpoints).padStart(2, '0')}`;
+    if (this.last.sector !== sectorText) {
+      el.sector.textContent = sectorText;
+      this.last.sector = sectorText;
+    }
+    const splitText = state.sectorDelta == null ? '—' : `${state.sectorDelta <= 0 ? '' : '+'}${state.sectorDelta.toFixed(2)}s`;
+    if (this.last.split !== splitText) {
+      el.split.textContent = splitText;
+      el.split.classList.toggle('is-ahead', state.sectorDelta != null && state.sectorDelta <= 0);
+      el.split.classList.toggle('is-behind', state.sectorDelta != null && state.sectorDelta > 0);
+      this.last.split = splitText;
+    }
+    const gap = state.rivalGap;
+    const gapText = gap == null ? '—' : `${gap >= 0 ? '+' : '-'}${Math.max(0.1, Math.abs(gap) / Math.max(state.speed, 28)).toFixed(1)}s`;
+    if (this.last.rivalGap !== gapText) {
+      el.rivalGap.textContent = gapText;
+      el.rivalGap.classList.toggle('is-ahead', gap > 0);
+      el.rivalGap.classList.toggle('is-behind', gap < 0);
+      this.last.rivalGap = gapText;
     }
     const chainActive = !!state.chain.active && state.chain.chain > 0.28;
     el.chain.classList.toggle('is-on', chainActive);
