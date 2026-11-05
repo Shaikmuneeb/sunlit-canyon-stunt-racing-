@@ -12,6 +12,7 @@ export class Environment {
     this.buildTerrain();
     this.buildMesas();
     this.buildHorizonRidges();
+    this.buildHeroLandmarks();
     this.buildFlora();
     this.buildDustDevils();
   }
@@ -337,6 +338,71 @@ export class Environment {
       this.horizon.add(base);
     }
     this.horizon.renderOrder = -2;
+  }
+
+  buildHeroLandmarks() {
+    const rng = mulberry32(6161);
+    const group = new THREE.Group();
+    this.scene.add(group);
+    const strata = ['#713225', '#8e3d2b', '#aa5135', '#c16a43', '#d88455'];
+    const landmarks = [
+      { s: this.track.findS(110, -34), side: -1, height: 38, width: 15, name: 'sun pillar' },
+      { s: this.track.findS(238, -103), side: 1, height: 46, width: 18, name: 'hairpin spire' },
+      { s: this.track.findS(352, -344), side: -1, height: 30, width: 22, name: 'branch sentinel' },
+      { s: this.track.findS(454, -116), side: 1, height: 52, width: 20, name: 'gap monolith' },
+      { s: this.track.findS(480, -284), side: -1, height: 34, width: 25, name: 'tunnel shoulder' },
+      { s: this.track.findS(305, -330), side: 1, height: 42, width: 16, name: 'mesa needle' },
+    ];
+    for (const landmark of landmarks) {
+      const smp = this.track.getSample(landmark.s).a;
+      const lat = landmark.side * (smp.width / 2 + 22 + rng() * 8);
+      const p = this.track.samplePos(landmark.s, lat);
+      const base = new THREE.Group();
+      const layers = 3 + Math.floor(rng() * 2);
+      for (let i = 0; i < layers; i++) {
+        const t = i / layers;
+        const h = landmark.height / layers * (0.82 + rng() * 0.28);
+        const r = landmark.width * (0.72 - t * 0.28) * (0.86 + rng() * 0.2);
+        const mesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(r * 0.78, r, h, 5 + (i % 2), 1),
+          new THREE.MeshStandardMaterial({ color: strata[(i + Math.floor(rng() * 2)) % strata.length], roughness: 1, flatShading: true })
+        );
+        mesh.position.y = i * (landmark.height / layers) + h * 0.5;
+        mesh.rotation.y = rng() * TAU;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        base.add(mesh);
+      }
+      const cap = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(landmark.width * 0.5, 0),
+        new THREE.MeshStandardMaterial({ color: '#d88455', roughness: 1, flatShading: true })
+      );
+      cap.position.y = landmark.height + 2;
+      cap.scale.y = 0.55;
+      base.add(cap);
+      base.position.set(p.x, p.y - 8, p.z);
+      base.rotation.y = Math.atan2(smp.tan.x, smp.tan.z) + landmark.side * 0.38;
+      base.name = landmark.name;
+      group.add(base);
+    }
+
+    // Low cliff shelves visually frame the branch split without blocking the
+    // racing line, making the route choice readable before the hairpin.
+    for (const side of [-1, 1]) {
+      const s = this.track.findS(372, -350);
+      const smp = this.track.getSample(s).a;
+      const p = this.track.samplePos(s, side * (smp.width / 2 + 34));
+      const shelf = new THREE.Mesh(
+        new THREE.CylinderGeometry(18, 25, 8, 6, 1),
+        new THREE.MeshStandardMaterial({ color: side < 0 ? '#8e3d2b' : '#a95035', roughness: 1, flatShading: true })
+      );
+      shelf.position.set(p.x, p.y + 7, p.z);
+      shelf.rotation.y = Math.atan2(smp.tan.x, smp.tan.z);
+      shelf.castShadow = true;
+      shelf.receiveShadow = true;
+      group.add(shelf);
+    }
+    this.heroLandmarks = group;
   }
 
   buildFlora() {
