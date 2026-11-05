@@ -114,6 +114,7 @@ export class Game {
     this.wasBoosting = false;
     this.recoverTimer = 0;
     this.muted = false;
+    this.lastRacePosition = TOTAL_RACERS;
     this.pausedFrom = 'racing';
     this.tutorialHints = !this.settings.seenTutorial;
     this.hintStage = 0;
@@ -454,6 +455,7 @@ export class Game {
     this.finishedResults = null;
     this.hintStage = 0;
     this.shortcutClaimedLap = -1;
+    this.lastRacePosition = TOTAL_RACERS;
     this.hintClock = 0;
     this.goTimer = 0;
     this.wasBoosting = false;
@@ -769,6 +771,16 @@ export class Game {
 
     this.rig.update(dt, this.car, {});
     this.updateRivals(dt);
+    const racePosition = this.racerPosition();
+    if (racePosition !== this.lastRacePosition) {
+      const movedUp = racePosition < this.lastRacePosition;
+      this.audio.rivalPass();
+      this.ui.toast(movedUp ? 'OVERTAKE' : 'POSITION LOST', {
+        value: `${racePosition}/${TOTAL_RACERS}`,
+        cls: movedUp ? 'good' : '',
+      });
+      this.lastRacePosition = racePosition;
+    }
     this.emitEffects(dt, drive);
 
     const speed = this.car.speed;
