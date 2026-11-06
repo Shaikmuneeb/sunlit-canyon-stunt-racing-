@@ -7,6 +7,10 @@ export class Environment {
     this.track = track;
     this.rng = mulberry32(4242);
     this.noise = makeNoise2D(771);
+    this.weatherClock = 0;
+    this.weather = 0.22;
+    this.wind = new THREE.Vector3(1, 0, 0.28).normalize();
+    this.baseSunDir = new THREE.Vector3(-0.48, 0.44, -0.76).normalize();
     this.buildSky();
     this.buildLights();
     this.buildTerrain();
@@ -15,10 +19,11 @@ export class Environment {
     this.buildHeroLandmarks();
     this.buildFlora();
     this.buildDustDevils();
+    this.buildWindDust();
   }
 
   buildSky() {
-    const sunDir = new THREE.Vector3(-0.48, 0.44, -0.76).normalize();
+    const sunDir = this.baseSunDir.clone();
     this.sunDir = sunDir;
     const geo = new THREE.SphereGeometry(1600, 32, 20);
     const mat = new THREE.ShaderMaterial({
@@ -82,6 +87,7 @@ export class Environment {
     this.sunSprite.scale.set(92, 92, 1);
     this.scene.add(this.sunSprite);
     this.scene.fog = new THREE.FogExp2(new THREE.Color('#c96849'), 0.00082);
+    this.skyMaterial = mat;
   }
 
   buildLights() {
@@ -103,6 +109,7 @@ export class Environment {
     this.scene.add(sun);
     this.scene.add(sun.target);
     this.sun = sun;
+    this.hemi = hemi;
     this.ambient = new THREE.AmbientLight('#d65e45', 0.2);
     this.scene.add(this.ambient);
 
@@ -548,9 +555,61 @@ export class Environment {
     this.devilsGroup = group;
   }
 
+  buildWindDust() {
+    const group = new THREE.Group();
+    this.scene.add(group);
+    const tex = makeSoftSprite();
+    this.windDust = [];
+    for (let i = 0; i < 22; i++) {
+      const mat = new THREE.SpriteMaterial({
+        map: tex,
+        color: i % 3 === 0 ? '#f4c58d' : '#d99867',
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+      });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(18 + this.rng() * 28, 3.5 + this.rng() * 5, 1);
+      group.add(sprite);
+      this.windDust.push({
+        sprite,
+        offset: new THREE.Vector3((this.rng() - 0.5) * 90, 1.2 + this.rng() * 7, (this.rng() - 0.5) * 90),
+        phase: this.rng() * TAU,
+        speed: 7 + this.rng() * 12,
+      });
+    }
+    this.windDustGroup = group;
+  }
+
   update(dt, cameraPos, elapsed) {
+    this.weatherClock += dt;
+    const gust = 0.5 + 0.5 * Math.sin(this.weatherClock * 0.22) + 0.18 * Math.sin(this.weatherClock * 0.71 + 1.7);
+    this.weather = clamp(0.2 + gust * 0.55, 0.12, 0.86);
+    const azimuth = this.weatherClock * 0.018 + Math.sin(this.weatherClock * 0.11) * 0.22;
+    const elevation = 0.39 + Math.sin(this.weatherClock * 0.075) * 0.08;
+    this.wind.set(Math.cos(azimuth), 0, Math.sin(azimuth)).normalize();
+    this.sunDir.copy(this.baseSunDir).applyAxisAngle(new THREE.Vector3(0, 1, 0), azimuth * 0.16);
+    this.sunDir.y = elevation;
+    this.sunDir.normalize();
+    if (this.skyMaterial) this.skyMaterial.uniforms.sunDir.value.copy(this.sunDir);
+    if (this.sun) {
+      this.sun.position.copy(cameraPos).addScaledVector(this.sunDir, 300);
+      this.sun.intensity = 3.0 + (1 - this.weather) * 1.0;
+      this.sun.color.setHSL(0.075 - this.weather * 0.018, 0.7, 0.68);
+    }
+    if (this.hemi) this.hemi.intensity = 0.92 + (1 - this.weather) * 0.28;
+    if (this.ambient) this.ambient.intensity = 0.16 + this.weather * 0.12;
+    if (this.scene.fog) this.scene.fog.density = 0.00072 + this.weather * 0.00036;
+    for (const d of this.windDust) {
+      const p = d.sprite.position;
+      p.addScaledVector(this.wind, (d.speed + gust * 9) * dt);
+      p.y += Math.sin(elapsed * 0.8 + d.phase) * dt * 0.35;
+      if (p.distanceTo(cameraPos) > 90) p.copy(cameraPos).add(d.offset);
+      d.sprite.material.opacity = clamp((this.weather - 0.16) * 0.24, 0, 0.18) * (0.7 + 0.3 * Math.sin(elapsed + d.phase));
+    }
     for (const d of this.devils) {
-      d.sprite.position.x += (12 + d.speed * 4) * dt;
+      d.sprite.position.x += (12 + d.speed * 4 + gust * 8) * dt;
       if (d.sprite.position.x > 900) d.sprite.position.x = -900;
       d.sprite.position.y += Math.sin(elapsed * 0.4 + d.phase) * dt * 0.25;
     }
