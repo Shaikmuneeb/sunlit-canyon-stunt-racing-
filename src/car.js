@@ -5,6 +5,8 @@ const CAR_HALF_WIDTH = 0.95;
 const GRAVITY = 24;
 const BASE_TOP_SPEED = 66;
 const BOOST_TOP_SPEED = 84;
+const SUSPENSION_STIFFNESS = 132;
+const SUSPENSION_DAMPING = 18;
 // Physics and camera use +Z as forward. The authored mesh details are toward
 // -Z, so correct the art locally instead of changing the movement convention.
 const MODEL_LOCAL_HEADING_FIX = Math.PI;
@@ -206,7 +208,7 @@ export class CarModel {
     this.bodyPitch = damp(this.bodyPitch, targetPitch, 7, dt);
 
     // Suspension spring
-    this.suspVel += (-this.susp * 150 - this.suspVel * 14) * dt;
+    this.suspVel += (-this.susp * SUSPENSION_STIFFNESS - this.suspVel * SUSPENSION_DAMPING) * dt;
     this.susp += this.suspVel * dt;
 
     this.tilt.rotation.z = (state.bank || 0) + this.bodyRoll;
@@ -729,14 +731,17 @@ export class Car {
     this.grounded = true;
     this.airborne = false;
     this.landImpact = impact;
-    this.model.addSuspensionKick(-clamp(impact * 0.16, 0.4, 5.5));
+    // A landing should compress and settle, not kick the car into a second
+    // artificial bounce. Keep the impulse readable while letting the spring
+    // absorb the rest of the impact over a few frames.
+    this.model.addSuspensionKick(-clamp(impact * 0.12, 0.25, 3.8));
     this.events.onLand?.(impact, this.pos.clone(), this.slip, this.airTime, this.speed);
     // Landing scrub: keep momentum, lose a slice if you land sideways.
     const sideways = clamp(Math.abs(this.slip) / 1.1, 0, 1);
-    const speedLoss = 0.035 + sideways * 0.22 + clamp((impact - 14) / 60, 0, 0.3);
+    const speedLoss = 0.022 + sideways * 0.16 + clamp((impact - 16) / 78, 0, 0.18);
     this.vel.multiplyScalar(1 - speedLoss);
     if (impact > 6 && this.speed > 0.5) {
-      const hard = impact > 17 || Math.abs(this.slip) > 0.55;
+      const hard = impact > 23 || Math.abs(this.slip) > 0.72;
       if (hard) {
         this.crash(clamp(impact / 38, 0.12, 0.5));
       } else {
