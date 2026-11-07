@@ -672,6 +672,11 @@ export class Game {
         this.style += 80;
         this.ui.toast('BIG AIR', { value: '+80', cls: 'good' });
       },
+      onNitro: (pos) => {
+        this.audio.boostWhoosh();
+        this.effects.addRing(pos, '#6ff7ff', 8);
+        this.ui.toast('NITRO LAUNCH', { value: 'RAMP READY', cls: 'big' });
+      },
       onOffRoad: () => {},
     };
   }

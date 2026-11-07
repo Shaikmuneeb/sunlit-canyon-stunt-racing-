@@ -330,6 +330,8 @@ export class Car {
     this.nearMissCooldown = new Map();
     this.nearMissCount = 0;
     this.boostTime = 0;
+    this.nitroTime = 0;
+    this.nitroRampS = null;
     this.airBoostAwarded = false;
     this.landImpact = 0;
     this.assist = 0.4;
@@ -376,6 +378,8 @@ export class Car {
     this.resetTimer = 0;
     this.airBoostAwarded = false;
     this.landImpact = 0;
+    this.nitroTime = 0;
+    this.nitroRampS = null;
   }
 
   addBoost(amount) {
@@ -426,6 +430,7 @@ export class Car {
     this.crashTimer = Math.max(0, this.crashTimer - dt);
     this.impactTimer = Math.max(0, this.impactTimer - dt);
     this.wallRideCooldown = Math.max(0, this.wallRideCooldown - dt);
+    this.nitroTime = Math.max(0, this.nitroTime - dt);
 
     const steerIn = this.controlLock > 0 ? 0 : input.steer;
     const throttle = this.controlLock > 0 ? 0 : input.throttle;
@@ -471,6 +476,18 @@ export class Car {
             }
           }
         }
+      }
+    }
+    const nitroRamp = this.grounded && this.route === 'main' ? this.track.rampAt(this.s, this.lat) : null;
+    if (!nitroRamp) this.nitroRampS = null;
+    if (nitroRamp && nitroRamp.gapKicker && input.boost && this.speed > 20 && this.boostMeter > 12) {
+      const ds = ((this.s - nitroRamp.s + this.track.length * 1.5) % this.track.length) - this.track.length * 0.5;
+      const progress = clamp((ds + nitroRamp.length * 0.5) / nitroRamp.length, 0, 1);
+      if (progress > 0.16 && progress < 0.68 && this.nitroRampS !== nitroRamp.s) {
+        this.nitroRampS = nitroRamp.s;
+        this.nitroTime = 0.82;
+        this.boostMeter = Math.max(0, this.boostMeter - 12);
+        this.events.onNitro?.(this.pos.clone());
       }
     }
     if (!this.grounded) {
@@ -537,6 +554,7 @@ export class Car {
         const curve = 1 - Math.pow(clamp(Math.abs(fwdSpeed) / 108, 0, 1), 1.75);
         let accel = 30 * curve * throttle;
         if (this.boosting) accel += 19 * throttle;
+        if (this.nitroTime > 0) accel += 22 * throttle;
         fwdSpeed += accel * dt;
       }
       if (brake > 0.02) {
