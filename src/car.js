@@ -442,6 +442,8 @@ export class Car {
     let ground = this.groundAt(this.s, this.lat);
     this.speed = Math.hypot(this.vel.x, this.vel.z);
 
+    let takeoffRamp = null;
+    let takeoffSpeed = 0;
     if (this.grounded) {
       if (!ground) {
         this.grounded = false;
@@ -450,6 +452,23 @@ export class Car {
       } else {
         this.pos.y = ground.y;
         this.vy = 0;
+        if (this.route === 'main') {
+          const ramp = this.track.rampAt(this.s, this.lat);
+          if (ramp && this.speed > 18 && ramp.height >= 2.4) {
+            const ds = ((this.s - ramp.s + this.track.length * 1.5) % this.track.length) - this.track.length * 0.5;
+            const progress = clamp((ds + ramp.length * 0.5) / ramp.length, 0, 1);
+            if (progress > (ramp.gapKicker ? 0.52 : 0.72)) {
+              takeoffRamp = ramp;
+              takeoffSpeed = this.speed;
+              this.grounded = false;
+              this.airborne = true;
+              this.airTime = 0;
+              this.vy = clamp(takeoffSpeed * (ramp.height / ramp.length) * 0.72 + ramp.height * 1.4, 7, 16);
+              this.pos.y = ground.y + 0.12;
+              this.events.onTakeoff?.(ramp, this.pos.clone(), takeoffSpeed);
+            }
+          }
+        }
       }
     }
     if (!this.grounded) {
@@ -496,6 +515,11 @@ export class Car {
     const carRight = new THREE.Vector3(forward.z, 0, -forward.x);
     let fwdSpeed = this.vel.x * forward.x + this.vel.z * forward.z;
     let latSpeed = this.vel.x * carRight.x + this.vel.z * carRight.z;
+    if (takeoffRamp) {
+      // A kicker changes the vertical component only; never scrub the launch
+      // speed because of grounded grip, slope correction, or ramp friction.
+      fwdSpeed = Math.max(fwdSpeed, takeoffSpeed);
+    }
 
     if (onGround) {
       let grip = this.drifting ? 2.15 : 10.5;

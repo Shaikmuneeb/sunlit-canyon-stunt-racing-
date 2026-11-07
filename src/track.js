@@ -307,6 +307,23 @@ export class Track {
     return y;
   }
 
+  rampAt(s, lat) {
+    let best = null;
+    let bestDistance = Infinity;
+    for (const ramp of this.ramps) {
+      const ds = ((s - ramp.s + this.length * 1.5) % this.length) - this.length * 0.5;
+      const dlat = Math.abs(lat - ramp.lat);
+      if (Math.abs(ds) <= ramp.length * 0.5 && dlat <= ramp.width * 0.5) {
+        const distance = Math.abs(ds) + dlat;
+        if (distance < bestDistance) {
+          best = ramp;
+          bestDistance = distance;
+        }
+      }
+    }
+    return best;
+  }
+
   isGap(s) {
     const { a, b, t } = this.getSample(s);
     return a.gap || b.gap;
