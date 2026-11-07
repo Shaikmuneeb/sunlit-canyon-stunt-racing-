@@ -264,6 +264,77 @@ export class Game {
     });
   }
 
+  resolveVehicleCollisions() {
+    const vehicles = [
+      { car: this.car, model: this.model, player: true },
+      ...this.rivals.map((rival) => ({ car: rival.car, model: rival.model, player: false })),
+    ];
+    const radius = 1.62;
+    const minDistance = radius * 2;
+    const restitution = 0.42;
+    const friction = 0.18;
+
+    for (let i = 0; i < vehicles.length - 1; i++) {
+      const a = vehicles[i].car;
+      for (let j = i + 1; j < vehicles.length; j++) {
+        const b = vehicles[j].car;
+        const dy = Math.abs(a.pos.y - b.pos.y);
+        if (dy > 2.4 || (!a.grounded && !b.grounded && dy > 1.2)) continue;
+
+        let nx = b.pos.x - a.pos.x;
+        let nz = b.pos.z - a.pos.z;
+        let distance = Math.hypot(nx, nz);
+        if (distance < 0.001) {
+          const angle = a.yaw || 0;
+          nx = Math.sin(angle);
+          nz = Math.cos(angle);
+          distance = 0.001;
+        } else {
+          nx /= distance;
+          nz /= distance;
+        }
+        if (distance >= minDistance) continue;
+
+        const overlap = minDistance - distance;
+        const halfPush = overlap * 0.52;
+        a.pos.x -= nx * halfPush;
+        a.pos.z -= nz * halfPush;
+        b.pos.x += nx * halfPush;
+        b.pos.z += nz * halfPush;
+
+        const rvx = b.vel.x - a.vel.x;
+        const rvz = b.vel.z - a.vel.z;
+        const closingSpeed = rvx * nx + rvz * nz;
+        if (closingSpeed < 0) {
+          const impulse = -(1 + restitution) * closingSpeed * 0.5;
+          a.vel.x -= nx * impulse;
+          a.vel.z -= nz * impulse;
+          b.vel.x += nx * impulse;
+          b.vel.z += nz * impulse;
+
+          const tx = -nz;
+          const tz = nx;
+          const tangentSpeed = rvx * tx + rvz * tz;
+          const tangentImpulse = tangentSpeed * friction * 0.5;
+          a.vel.x += tx * tangentImpulse;
+          a.vel.z += tz * tangentImpulse;
+          b.vel.x -= tx * tangentImpulse;
+          b.vel.z -= tz * tangentImpulse;
+        }
+
+        for (const vehicle of [vehicles[i], vehicles[j]]) {
+          const car = vehicle.car;
+          car.impactTimer = Math.max(car.impactTimer, 0.16);
+          car.model.addSuspensionKick(-0.45);
+          const forward = new THREE.Vector3(Math.sin(car.yaw), 0, Math.cos(car.yaw));
+          car.forwardSpeed = car.vel.x * forward.x + car.vel.z * forward.z;
+          car.speed = Math.hypot(car.vel.x, car.vel.z);
+          car.model.group.position.copy(car.pos);
+        }
+      }
+    }
+  }
+
   playerRaceDistance() {
     const delta = ((this.car.s - this.playerStartS) % this.track.length + this.track.length) % this.track.length;
     return Math.max(0, (this.lap - 1) * this.track.length + delta);
@@ -771,6 +842,7 @@ export class Game {
 
     this.rig.update(dt, this.car, {});
     this.updateRivals(dt);
+    this.resolveVehicleCollisions();
     const racePosition = this.racerPosition();
     if (racePosition !== this.lastRacePosition) {
       const movedUp = racePosition < this.lastRacePosition;
