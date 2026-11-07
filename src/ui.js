@@ -35,6 +35,8 @@ export class UI {
       speed: $('#speed-value'),
       boost: $('#boost-fill'),
       boostPct: $('#boost-pct'),
+      nitro: $('#nitro-fill'),
+      nitroStatus: $('#nitro-status'),
       style: $('#style-value'),
       chain: $('#chain'),
       chainMult: $('#chain-mult'),
@@ -247,6 +249,21 @@ export class UI {
       el.boostPct.textContent = `${boostPct}%`;
       el.boost.classList.toggle('is-low', boost < 18);
       this.last.boost = boostPct;
+    }
+    const nitroReady = boost >= 12;
+    const nitroActive = state.nitro > 0;
+    const nitroStatus = nitroActive ? 'ACTIVE' : nitroReady ? 'READY' : 'CHARGING';
+    const nitroPct = Math.round(boost);
+    if (this.last.nitro !== nitroPct) {
+      el.nitro.style.width = `${nitroPct}%`;
+      this.last.nitro = nitroPct;
+    }
+    if (this.last.nitroStatus !== nitroStatus) {
+      el.nitroStatus.textContent = nitroStatus;
+      el.nitroStatus.classList.toggle('is-ready', nitroReady && !nitroActive);
+      el.nitroStatus.classList.toggle('is-active', nitroActive);
+      el.nitroStatus.classList.toggle('is-charging', !nitroReady && !nitroActive);
+      this.last.nitroStatus = nitroStatus;
     }
     const style = Math.round(state.style);
     if (this.last.style !== style) {

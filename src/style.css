@@ -512,6 +512,58 @@ body {
   box-shadow: none;
 }
 
+.nitro-hud {
+  width: clamp(140px, 14vw, 190px);
+  padding-top: 1px;
+}
+
+.nitro-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #8fefff;
+  margin-bottom: 4px;
+}
+
+.nitro-head strong {
+  font-size: 8px;
+  color: rgba(223, 251, 255, 0.62);
+  transition: color 0.18s ease, text-shadow 0.18s ease;
+}
+
+.nitro-head strong.is-ready {
+  color: #8fffea;
+  text-shadow: 0 0 10px rgba(77, 244, 218, 0.85);
+}
+
+.nitro-head strong.is-active {
+  color: #fff0a8;
+  text-shadow: 0 0 12px rgba(255, 215, 100, 0.95);
+}
+
+.nitro-head strong.is-charging {
+  color: rgba(143, 239, 255, 0.56);
+}
+
+.nitro-track {
+  height: 5px;
+  background: rgba(8, 22, 27, 0.82);
+  border: 1px solid rgba(111, 247, 255, 0.3);
+  padding: 1px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
+}
+
+#nitro-fill {
+  height: 100%;
+  width: 45%;
+  background: linear-gradient(90deg, #158e9f, #63efff 65%, #dfffff);
+  box-shadow: 0 0 10px rgba(78, 235, 255, 0.65);
+  transition: width 0.12s linear;
+}
+
 .style-read {
   display: flex;
   align-items: center;

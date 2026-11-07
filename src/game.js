@@ -916,6 +916,7 @@ export class Game {
       bestLap: this.currentBestLap(),
       speed: this.car.speed,
       boost: this.car.boostMeter,
+      nitro: this.car.nitroTime,
       style: this.style + this.car.driftScore * 0.55,
       chain: {
         active: this.car.drifting,
